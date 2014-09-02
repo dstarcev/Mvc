@@ -11,6 +11,8 @@ namespace Microsoft.AspNet.Mvc
 
         public bool IsOptional { get; set; }
 
+        public IUberBinding Binding { get; set; }
+
         public ParameterBindingInfo ParameterBindingInfo { get; set; }
 
         public BodyParameterInfo BodyParameterInfo { get; set; }

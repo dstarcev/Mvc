@@ -229,6 +229,29 @@ namespace Microsoft.AspNet.Mvc
             var actionBindingContext = await _bindingProvider.GetActionBindingContextAsync(ActionContext);
             var parameters = ActionContext.ActionDescriptor.Parameters;
             var metadataProvider = actionBindingContext.MetadataProvider;
+
+            //// First get data for the controller properties. 
+            //foreach (var controllerProperty in ActionContext.ActionDescriptor.ControllerProperties)
+            //{
+            //    var modelMetadata = metadataProvider.GetMetadataForType(
+            //            modelAccessor: null,
+            //            modelType: controllerProperty.Type);
+
+            //    var uberContext = new UberBindingContext()
+            //    {
+            //        ActionContext = ActionContext,
+            //        ModelName = controllerProperty.Name,
+            //        ModelMetadata = modelMetadata,
+            //        ModelBinder = actionBindingContext.ModelBinder,
+            //        ValueProvider = actionBindingContext.ValueProvider,
+            //        ValidatorProvider = actionBindingContext.ValidatorProvider,
+            //        MetadataProvider = metadataProvider,
+            //        // FallbackToEmptyPrefix = true
+            //    };
+
+            //    await controllerProperty.Binding.BindAsync(uberContext);
+            //}
+
             var parameterValues = new Dictionary<string, object>(parameters.Count, StringComparer.Ordinal);
 
             for (var i = 0; i < parameters.Count; i++)
@@ -255,6 +278,7 @@ namespace Microsoft.AspNet.Mvc
                 else
                 {
                     var parameterType = parameter.ParameterBindingInfo.ParameterType;
+
                     var modelMetadata = metadataProvider.GetMetadataForType(
                         modelAccessor: null,
                         modelType: parameterType);
@@ -271,10 +295,28 @@ namespace Microsoft.AspNet.Mvc
                         HttpContext = actionBindingContext.ActionContext.HttpContext,
                         FallbackToEmptyPrefix = true
                     };
-                    if (await actionBindingContext.ModelBinder.BindModelAsync(modelBindingContext))
+
+                    var binding = parameter.Binding;
+
+                    var uberContext = new UberBindingContext()
                     {
-                        parameterValues[parameter.Name] = modelBindingContext.Model;
-                    }
+                        ActionContext = ActionContext,
+                        ModelName = parameter.Name,
+                        ModelMetadata = modelMetadata,
+                        ModelBinder = actionBindingContext.ModelBinder,
+                        ValueProvider = actionBindingContext.ValueProvider,
+                        ValidatorProvider = actionBindingContext.ValidatorProvider,
+                        MetadataProvider = metadataProvider,
+                        // FallbackToEmptyPrefix = true
+                    };
+
+                    await binding.BindAsync(uberContext);
+
+                    parameterValues[parameter.Name] = uberContext.Model;
+                    //if (await actionBindingContext.ModelBinder.BindModelAsync(modelBindingContext))
+                    //{
+                    //    parameterValues[parameter.Name] = modelBindingContext.Model;
+                    //}
                 }
             }
 

@@ -130,18 +130,35 @@ namespace Microsoft.AspNet.Mvc
             foreach (var controller in model.Controllers)
             {
                 var controllerDescriptor = new ControllerDescriptor(controller.ControllerType);
+                //var controllerPropertyBindingInfos = controller.Properties.Select(property =>
+                //{
+                //    var uberBindingAttribute = property.Attributes.OfType<UberBindingAttribute>().FirstOrDefault();
+                //    var binding = uberBindingAttribute?.GetBinding(new Descriptor());
+                //    binding = binding ?? new UberBinding();
+
+                //    return new PropertyBindingInfo
+                //    {
+                //        Binding = binding,
+                //        Name = property.Name,
+                //        Type = property.PropertyType
+                //    };
+
+                //});
+
                 foreach (var action in controller.Actions)
                 {
                     var parameterDescriptors = new List<ParameterDescriptor>();
                     foreach (var parameter in action.Parameters)
                     {
                         var isFromBody = parameter.Attributes.OfType<FromBodyAttribute>().Any();
-
+                        var uberBinding = parameter.Attributes.OfType<UberBindingAttribute>().FirstOrDefault();
+                        var binding = uberBinding?.GetBinding(new Descriptor());
+                        binding = binding ?? new UberBinding();
                         parameterDescriptors.Add(new ParameterDescriptor()
                         {
                             Name = parameter.ParameterName,
                             IsOptional = parameter.IsOptional,
-
+                            Binding = binding,
                             ParameterBindingInfo = isFromBody
                                 ? null
                                 : new ParameterBindingInfo(
@@ -171,7 +188,7 @@ namespace Microsoft.AspNet.Mvc
                         MethodInfo = action.ActionMethod,
                         Parameters = parameterDescriptors,
                         RouteConstraints = new List<RouteDataActionConstraint>(),
-                        AttributeRouteInfo = attributeRouteInfo
+                        AttributeRouteInfo = attributeRouteInfo,
                     };
 
                     actionDescriptor.DisplayName = string.Format(

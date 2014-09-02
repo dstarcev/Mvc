@@ -33,6 +33,21 @@ namespace Microsoft.AspNet.Mvc.ReflectedModelBuilder
             ControllerName = controllerType.Name.EndsWith("Controller", StringComparison.Ordinal)
                         ? controllerType.Name.Substring(0, controllerType.Name.Length - "Controller".Length)
                         : controllerType.Name;
+            var properties = controllerType.GetRuntimeProperties().Where(
+                    prop => prop.GetIndexParameters().Length == 0 &&
+                    prop.GetMethod != null &&
+                    prop.GetMethod.IsPublic &&
+                    !prop.GetMethod.IsStatic);
+
+            Properties = properties.Select(property => {
+                var attributes = property.GetCustomAttributes(inherit: false).OfType<object>().ToList();
+                return new ReflectedPropertyModel
+                {
+                    Name = property.Name,
+                    PropertyType = property.PropertyType,
+                    Attributes = attributes
+                };
+            }).ToList();
         }
 
         public List<ReflectedActionModel> Actions { get; private set; }
@@ -43,10 +58,19 @@ namespace Microsoft.AspNet.Mvc.ReflectedModelBuilder
 
         public TypeInfo ControllerType { get; private set; }
 
+        public List<ReflectedPropertyModel> Properties { get; private set; }
+
         public List<IFilter> Filters { get; private set; }
 
         public List<RouteConstraintAttribute> RouteConstraints { get; private set; }
 
         public ReflectedAttributeRouteModel AttributeRouteModel { get; set; }
+    }
+
+    public class ReflectedPropertyModel
+    {
+        public string Name { get; set; }
+        public Type PropertyType { get; set; }
+        public List<object> Attributes { get; set; }
     }
 }

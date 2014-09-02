@@ -40,7 +40,8 @@ namespace Microsoft.AspNet.Mvc
         {
             return type.GetRuntimeProperties()
                        .Where(property =>
-                              property.IsDefined(activateAttributeType) &&
+                              (activateAttributeType == null || property.IsDefined(activateAttributeType)) && 
+                              property.DeclaringType != typeof(object) &&
                               property.GetIndexParameters().Length == 0 &&
                               property.SetMethod != null &&
                               !property.SetMethod.IsStatic)

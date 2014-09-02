@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace Microsoft.AspNet.Mvc
@@ -25,5 +26,15 @@ namespace Microsoft.AspNet.Mvc
         public string Name { get; private set; }
 
         public TypeInfo ControllerTypeInfo { get; private set; }
+    }
+
+    public class PropertyBindingInfo
+    {
+        public string Name { get; set; }
+
+        public Type Type { get; set; }
+
+        public IUberBinding Binding { get; set; }
+
     }
 }

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNet.Mvc.Routing;
+using Microsoft.AspNet.Mvc.HeaderValueAbstractions;
 
 namespace Microsoft.AspNet.Mvc
 {
@@ -34,5 +35,10 @@ namespace Microsoft.AspNet.Mvc
         /// A friendly name for this action.
         /// </summary>
         public virtual string DisplayName { get; set; }
+    }
+
+    public class ConsumesInfo
+    {
+        public IList<MediaTypeHeaderValue> ContentTypes { get; set; }
     }
 }

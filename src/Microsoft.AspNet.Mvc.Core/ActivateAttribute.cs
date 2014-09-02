@@ -10,7 +10,11 @@ namespace Microsoft.AspNet.Mvc
     /// container for activated types.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter, AllowMultiple = false)]
-    public sealed class ActivateAttribute : Attribute
+    public sealed class ActivateAttribute : UberBindingAttribute
     {
+        public override IUberBinding GetBinding(Descriptor descriptor)
+        {
+            return new ServicesBinding();
+        }
     }
 }

@@ -9,6 +9,7 @@ using Microsoft.AspNet.Http;
 using Microsoft.AspNet.Mvc.Core;
 using Microsoft.AspNet.Mvc.ModelBinding;
 using Microsoft.Framework.DependencyInjection;
+using System.Linq;
 
 namespace Microsoft.AspNet.Mvc
 {
@@ -20,17 +21,19 @@ namespace Microsoft.AspNet.Mvc
         private readonly Func<Type, PropertyActivator<ActionContext>[]> _getPropertiesToActivate;
         private readonly IReadOnlyDictionary<Type, Func<ActionContext, object>> _valueAccessorLookup;
         private readonly ConcurrentDictionary<Type, PropertyActivator<ActionContext>[]> _injectActions;
-
+        private readonly IActionBindingContextProvider _bindingContextProvider;
         /// <summary>
         /// Initializes a new instance of the DefaultControllerActivator class.
         /// </summary>
-        public DefaultControllerActivator()
+        public DefaultControllerActivator(
+            [NotNull] IActionBindingContextProvider bindingContextProvider)
         {
+            _bindingContextProvider = bindingContextProvider;
             _valueAccessorLookup = CreateValueAccessorLookup();
             _injectActions = new ConcurrentDictionary<Type, PropertyActivator<ActionContext>[]>();
             _getPropertiesToActivate = type =>
                 PropertyActivator<ActionContext>.GetPropertiesToActivate(type,
-                                                                         typeof(ActivateAttribute),
+                                                                         null,
                                                                          CreateActivateInfo);
         }
 
@@ -86,11 +89,40 @@ namespace Microsoft.AspNet.Mvc
             Func<ActionContext, object> valueAccessor;
             if (!_valueAccessorLookup.TryGetValue(property.PropertyType, out valueAccessor))
             {
-                valueAccessor = (actionContext) =>
+                valueAccessor = (actionContext =>
                 {
-                    var serviceProvider = actionContext.HttpContext.RequestServices;
-                    return serviceProvider.GetService(property.PropertyType);
-                };
+                    var actionBindingContext = _bindingContextProvider.GetActionBindingContextAsync(actionContext).Result;
+                    var parameters = actionContext.ActionDescriptor.Parameters;
+                    var metadataProvider = actionBindingContext.MetadataProvider;
+
+                    // First get data for the controller properties. 
+                        var modelMetadata = metadataProvider.GetMetadataForType(
+                                modelAccessor: null,
+                                modelType: property.PropertyType);
+
+                        var uberContext = new UberBindingContext()
+                        {
+                            ActionContext = actionContext,
+                            ModelName = property.Name,
+                            ModelMetadata = modelMetadata,
+                            ModelBinder = actionBindingContext.ModelBinder,
+                            ValueProvider = actionBindingContext.ValueProvider,
+                            ValidatorProvider = actionBindingContext.ValidatorProvider,
+                            MetadataProvider = metadataProvider,
+                            // FallbackToEmptyPrefix = true
+                        };
+
+                    // It is possible to provide a chained list which can be used to bind the object. 
+                    // For now choosing the first one.
+                    var uberBindingAttribute = property.GetCustomAttributes()
+                                                       .OfType<UberBindingAttribute>()
+                                                       .FirstOrDefault();
+                    var binding = uberBindingAttribute?.GetBinding(new Descriptor());
+                    binding = binding ?? new UberBinding();
+
+                    binding.BindAsync(uberContext).Wait();
+                    return uberContext.Model;
+                });
             }
 
             return new PropertyActivator<ActionContext>(property, valueAccessor);
