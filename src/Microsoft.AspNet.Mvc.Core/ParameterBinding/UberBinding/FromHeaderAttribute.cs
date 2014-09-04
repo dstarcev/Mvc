@@ -1,15 +1,20 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-
 namespace Microsoft.AspNet.Mvc
 {
-    public sealed class FromBodyAttribute : UberBindingAttribute
+    public class FromHeaderAttribute : UberBindingAttribute
     {
+        private string _headerKey;
+
+        public FromHeaderAttribute(string key)
+        {
+            _headerKey = key;
+        }
+
         public override IUberBinding GetBinding(Descriptor descriptor)
         {
-            throw new NotImplementedException();
+            return new HeaderBinding(_headerKey);
         }
     }
 }

@@ -31,6 +31,7 @@ namespace Microsoft.AspNet.Mvc
             options.ModelBinders.Add(new ByteArrayModelBinder());
             options.ModelBinders.Add(typeof(GenericModelBinder));
             options.ModelBinders.Add(new MutableObjectModelBinder());
+            options.ModelBinders.Add(new ComplexModelDtoModelBinder2());
             options.ModelBinders.Add(new ComplexModelDtoModelBinder());
 
             // Set up default output formatters.

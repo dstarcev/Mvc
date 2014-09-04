@@ -5,8 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using Microsoft.AspNet.Http;
 using Microsoft.AspNet.Mvc.Core;
 using Microsoft.AspNet.Mvc.ModelBinding;
 using Microsoft.Framework.DependencyInjection;
@@ -218,109 +220,124 @@ namespace Microsoft.AspNet.Mvc
         {
             _cursor.SetStage(FilterStage.ActionFilters);
 
-            var arguments = await GetActionArguments(ActionContext.ModelState);
+            // We are finally ready to invoke the action. 
+            // Build the invocation time action descriptor. 
+            // This does not need to go recursively to all the descriptors.
+            // TODO: Cache it. 
+            // Also the property part should be fetched as soon as the controller is invoked. 
+            var actionInvocationMetadata = GetActionInvocationMetadata();
+            var arguments = await GetActionArguments(actionInvocationMetadata);
+            
             _actionExecutingContext = new ActionExecutingContext(ActionContext, _filters, arguments);
 
             await InvokeActionMethodFilter();
         }
 
-        internal async Task<IDictionary<string, object>> GetActionArguments(ModelStateDictionary modelState)
+        //private async Task ActivateControllerProperties(ActionInvocationMetadata metadata)
+        //{
+        //    var invokedProperties = InvokeBindings(metadata.Properties);
+        //    var controllerType = ActionContext.Controller.GetType();
+        //    foreach (var item in invokedProperties)
+        //    {
+
+        //    }
+        //    var p = new PropertyActivator<UberBindingContext>()
+        //}
+
+        private ActionInvocationMetadata GetActionInvocationMetadata()
+        {
+            var parameters = ActionContext.ActionDescriptor.Parameters;
+            var controllerType = ActionContext.Controller.GetType();
+            var propertyDescriptors = controllerType.GetRuntimeProperties()
+                       .Where(property =>
+                              property.DeclaringType != typeof(object) &&
+                              property.GetIndexParameters().Length == 0 &&
+                              property.SetMethod != null &&
+                              !property.SetMethod.IsStatic)
+                        .Select(property =>
+                        {
+                            var attributes = property.GetCustomAttributes().OfType<UberBindingAttribute>();
+                            return new PropertyDescriptor()
+                            {
+                                BindingAttributes = attributes,
+                                Name = property.Name,
+                                Type = property.PropertyType
+                            };
+                        });
+
+            var parameterBindingInfos = parameters.Select(GetBindingInfo);
+            var propertyBindingInfos = propertyDescriptors.Select(GetBindingInfo);
+
+            return new ActionInvocationMetadata()
+            {
+                Parameters = parameterBindingInfos.ToList(),
+                Properties = propertyBindingInfos.ToList()
+            };
+        }
+
+        private BindingInfo GetBindingInfo(Descriptor desc)
+        {
+            return new BindingInfo
+            {
+                Binding = GetBinding(desc),
+                Name = desc.Name,
+                Type = desc.Type
+            };
+        }
+
+        internal async Task<IDictionary<string, object>> GetActionArguments(ActionInvocationMetadata metadata)
+        {
+            return await InvokeBindings(metadata.Parameters);
+        }
+
+        internal async Task<IDictionary<string, object>> InvokeBindings(IList<BindingInfo> infos)
         {
             var actionBindingContext = await _bindingProvider.GetActionBindingContextAsync(ActionContext);
-            var parameters = ActionContext.ActionDescriptor.Parameters;
             var metadataProvider = actionBindingContext.MetadataProvider;
-
-            //// First get data for the controller properties. 
-            //foreach (var controllerProperty in ActionContext.ActionDescriptor.ControllerProperties)
-            //{
-            //    var modelMetadata = metadataProvider.GetMetadataForType(
-            //            modelAccessor: null,
-            //            modelType: controllerProperty.Type);
-
-            //    var uberContext = new UberBindingContext()
-            //    {
-            //        ActionContext = ActionContext,
-            //        ModelName = controllerProperty.Name,
-            //        ModelMetadata = modelMetadata,
-            //        ModelBinder = actionBindingContext.ModelBinder,
-            //        ValueProvider = actionBindingContext.ValueProvider,
-            //        ValidatorProvider = actionBindingContext.ValidatorProvider,
-            //        MetadataProvider = metadataProvider,
-            //        // FallbackToEmptyPrefix = true
-            //    };
-
-            //    await controllerProperty.Binding.BindAsync(uberContext);
-            //}
-
-            var parameterValues = new Dictionary<string, object>(parameters.Count, StringComparer.Ordinal);
-
-            for (var i = 0; i < parameters.Count; i++)
+            var parameterValues = new Dictionary<string, object>(infos.Count, StringComparer.Ordinal);
+            foreach (var parameter in infos)
             {
-                var parameter = parameters[i];
-                if (parameter.BodyParameterInfo != null)
+                var modelMetadata = metadataProvider.GetMetadataForType(
+                    modelAccessor: null,
+                    modelType: parameter.Type);
+                var uberContext = new UberBindingContext()
                 {
-                    var parameterType = parameter.BodyParameterInfo.ParameterType;
-                    var formatterContext = new InputFormatterContext(actionBindingContext.ActionContext,
-                                                                     parameterType);
-                    var inputFormatter = actionBindingContext.InputFormatterSelector.SelectFormatter(
-                        formatterContext);
-                    if (inputFormatter == null)
-                    {
-                        var request = ActionContext.HttpContext.Request;
-                        var unsupportedContentType = Resources.FormatUnsupportedContentType(request.ContentType);
-                        ActionContext.ModelState.AddModelError(parameter.Name, unsupportedContentType);
-                    }
-                    else
-                    {
-                        parameterValues[parameter.Name] = await inputFormatter.ReadAsync(formatterContext);
-                    }
-                }
-                else
-                {
-                    var parameterType = parameter.ParameterBindingInfo.ParameterType;
+                    //ActionContext = ActionContext,
+                    HttpContext = ActionContext.HttpContext,
+                    ModelState = ActionContext.ModelState,
+                    ModelName = parameter.Name,
+                    ModelMetadata = modelMetadata,
+                    ModelBinder = actionBindingContext.ModelBinder,
+                    ValueProvider = actionBindingContext.ValueProvider,
+                    ValidatorProvider = actionBindingContext.ValidatorProvider,
+                    MetadataProvider = metadataProvider,
+                    // FallbackToEmptyPrefix = true
+                };
 
-                    var modelMetadata = metadataProvider.GetMetadataForType(
-                        modelAccessor: null,
-                        modelType: parameterType);
-
-                    var modelBindingContext = new ModelBindingContext
-                    {
-                        ModelName = parameter.Name,
-                        ModelState = modelState,
-                        ModelMetadata = modelMetadata,
-                        ModelBinder = actionBindingContext.ModelBinder,
-                        ValueProvider = actionBindingContext.ValueProvider,
-                        ValidatorProvider = actionBindingContext.ValidatorProvider,
-                        MetadataProvider = metadataProvider,
-                        HttpContext = actionBindingContext.ActionContext.HttpContext,
-                        FallbackToEmptyPrefix = true
-                    };
-
-                    var binding = parameter.Binding;
-
-                    var uberContext = new UberBindingContext()
-                    {
-                        ActionContext = ActionContext,
-                        ModelName = parameter.Name,
-                        ModelMetadata = modelMetadata,
-                        ModelBinder = actionBindingContext.ModelBinder,
-                        ValueProvider = actionBindingContext.ValueProvider,
-                        ValidatorProvider = actionBindingContext.ValidatorProvider,
-                        MetadataProvider = metadataProvider,
-                        // FallbackToEmptyPrefix = true
-                    };
-
-                    await binding.BindAsync(uberContext);
-
-                    parameterValues[parameter.Name] = uberContext.Model;
-                    //if (await actionBindingContext.ModelBinder.BindModelAsync(modelBindingContext))
-                    //{
-                    //    parameterValues[parameter.Name] = modelBindingContext.Model;
-                    //}
-                }
+                await parameter.Binding.BindAsync(uberContext);
+                parameterValues[parameter.Name] = uberContext.Model;
             }
 
             return parameterValues;
+        }
+
+        private IUberBinding GetBinding(Descriptor descriptor)
+        {
+            foreach (var uberBinding in descriptor.BindingAttributes)
+            {
+                var binding = uberBinding?.GetBinding(descriptor);
+                binding = binding ?? new ModelBindingWrapper();
+                //if(binding.CanBind(descriptor.Type))
+                //{
+                //    return binding;
+                //}
+
+                return binding;
+            }
+
+            // If no specific binding was found, look at the type definition and see. 
+            var customAttributes = Attribute.GetCustomAttributes(descriptor.Type).OfType<UberBindingAttribute>().FirstOrDefault();
+            return customAttributes?.GetBinding(descriptor) ?? new ModelBindingWrapper();
         }
 
         private async Task<ActionExecutedContext> InvokeActionMethodFilter()

@@ -64,7 +64,8 @@ namespace Microsoft.AspNet.Mvc
             yield return describe.Singleton<IActionDescriptorsCollectionProvider,
                 DefaultActionDescriptorsCollectionProvider>();
 
-            yield return describe.Transient<IModelMetadataProvider, DataAnnotationsModelMetadataProvider>();
+            //yield return describe.Transient<IModelMetadataProvider, DataAnnotationsModelMetadataProvider>();
+            yield return describe.Transient<IModelMetadataProvider, UberBindingMetataProvider>();
             yield return describe.Scoped<IActionBindingContextProvider, DefaultActionBindingContextProvider>();
 
             yield return describe.Transient<IInputFormatterSelector, DefaultInputFormatterSelector>();

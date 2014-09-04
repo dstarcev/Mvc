@@ -130,6 +130,9 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             return new PropertyInformation
             {
                 PropertyHelper = helper,
+
+                // TODO: here even though we are passing in custom attributes, we are dependent on the person who is consuming this.
+                // If it is data annotations it will be only data annotation attributes.. 
                 Prototype = CreateMetadataPrototype(property.GetCustomAttributes(),
                                                     containerType,
                                                     property.PropertyType,

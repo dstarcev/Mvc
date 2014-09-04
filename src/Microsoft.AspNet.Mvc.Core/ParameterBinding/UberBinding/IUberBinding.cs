@@ -2,14 +2,14 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Threading.Tasks;
 
 namespace Microsoft.AspNet.Mvc
 {
-    public sealed class FromBodyAttribute : UberBindingAttribute
+    public interface IUberBinding
     {
-        public override IUberBinding GetBinding(Descriptor descriptor)
-        {
-            throw new NotImplementedException();
-        }
+        Task BindAsync(UberBindingContext context);
+
+        bool CanBind(Type modelType);
     }
 }

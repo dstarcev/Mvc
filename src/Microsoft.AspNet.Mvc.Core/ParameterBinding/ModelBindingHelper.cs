@@ -62,5 +62,21 @@ namespace Microsoft.AspNet.Mvc
 
             return false;
         }
+
+        internal static string CreatePropertyModelName(string prefix, string propertyName)
+        {
+            if (string.IsNullOrEmpty(prefix))
+            {
+                return propertyName ?? string.Empty;
+            }
+            else if (string.IsNullOrEmpty(propertyName))
+            {
+                return prefix ?? string.Empty;
+            }
+            else
+            {
+                return prefix + "." + propertyName;
+            }
+        }
     }
 }

@@ -5,10 +5,8 @@ using System;
 
 namespace Microsoft.AspNet.Mvc
 {
-    public class ParameterDescriptor
+    public class ParameterDescriptor : Descriptor
     {
-        public string Name { get; set; }
-
         public bool IsOptional { get; set; }
 
         public IUberBinding Binding { get; set; }

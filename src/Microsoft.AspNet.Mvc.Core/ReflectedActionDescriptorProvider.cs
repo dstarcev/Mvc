@@ -151,14 +151,12 @@ namespace Microsoft.AspNet.Mvc
                     foreach (var parameter in action.Parameters)
                     {
                         var isFromBody = parameter.Attributes.OfType<FromBodyAttribute>().Any();
-                        var uberBinding = parameter.Attributes.OfType<UberBindingAttribute>().FirstOrDefault();
-                        var binding = uberBinding?.GetBinding(new Descriptor());
-                        binding = binding ?? new UberBinding();
+                        var bindingAttributes = parameter.Attributes.OfType<UberBindingAttribute>();
                         parameterDescriptors.Add(new ParameterDescriptor()
                         {
                             Name = parameter.ParameterName,
                             IsOptional = parameter.IsOptional,
-                            Binding = binding,
+                            BindingAttributes = bindingAttributes,
                             ParameterBindingInfo = isFromBody
                                 ? null
                                 : new ParameterBindingInfo(

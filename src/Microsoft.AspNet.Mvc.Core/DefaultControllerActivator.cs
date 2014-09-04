@@ -37,6 +37,16 @@ namespace Microsoft.AspNet.Mvc
                                                                          CreateActivateInfo);
         }
 
+        public DefaultControllerActivator()
+        {
+            _valueAccessorLookup = CreateValueAccessorLookup();
+            _injectActions = new ConcurrentDictionary<Type, PropertyActivator<ActionContext>[]>();
+            _getPropertiesToActivate = type =>
+                PropertyActivator<ActionContext>.GetPropertiesToActivate(type,
+                                                                         null,
+                                                                         CreateActivateInfo);
+        }
+
         /// <summary>
         /// Activates the specified controller by using the specified action context.
         /// </summary>
@@ -92,7 +102,6 @@ namespace Microsoft.AspNet.Mvc
                 valueAccessor = (actionContext =>
                 {
                     var actionBindingContext = _bindingContextProvider.GetActionBindingContextAsync(actionContext).Result;
-                    var parameters = actionContext.ActionDescriptor.Parameters;
                     var metadataProvider = actionBindingContext.MetadataProvider;
 
                     // First get data for the controller properties. 
@@ -102,7 +111,9 @@ namespace Microsoft.AspNet.Mvc
 
                         var uberContext = new UberBindingContext()
                         {
-                            ActionContext = actionContext,
+                            //ActionContext = actionContext,
+                            HttpContext = actionContext.HttpContext,
+                            ModelState = actionContext.ModelState,
                             ModelName = property.Name,
                             ModelMetadata = modelMetadata,
                             ModelBinder = actionBindingContext.ModelBinder,
@@ -117,8 +128,8 @@ namespace Microsoft.AspNet.Mvc
                     var uberBindingAttribute = property.GetCustomAttributes()
                                                        .OfType<UberBindingAttribute>()
                                                        .FirstOrDefault();
-                    var binding = uberBindingAttribute?.GetBinding(new Descriptor());
-                    binding = binding ?? new UberBinding();
+                    var binding = uberBindingAttribute?.GetBinding(new TypeDescriptor() { Type = modelMetadata.ModelType });
+                    binding = binding ?? new ModelBindingWrapper();
 
                     binding.BindAsync(uberContext).Wait();
                     return uberContext.Model;
