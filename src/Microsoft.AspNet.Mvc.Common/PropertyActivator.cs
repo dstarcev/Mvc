@@ -4,12 +4,14 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Microsoft.AspNet.Mvc
 {
     internal class PropertyActivator<TContext>
     {
         private readonly Func<TContext, object> _valueAccessor;
+        private readonly Func<TContext, Task<object>> _asyncValueAccessor;
         private readonly Action<object, object> _fastPropertySetter;
 
         public PropertyActivator(PropertyInfo propertyInfo,
@@ -20,11 +22,26 @@ namespace Microsoft.AspNet.Mvc
             _fastPropertySetter = PropertyHelper.MakeFastPropertySetter(propertyInfo);
         }
 
+        public PropertyActivator(PropertyInfo propertyInfo,
+                                 Func<TContext, Task<object>> asyncValueAccessor)
+        {
+            PropertyInfo = propertyInfo;
+            _asyncValueAccessor = asyncValueAccessor;
+            _fastPropertySetter = PropertyHelper.MakeFastPropertySetter(propertyInfo);
+        }
+
         public PropertyInfo PropertyInfo { get; private set; }
 
         public object Activate(object view, TContext context)
         {
             var value = _valueAccessor(context);
+            _fastPropertySetter(view, value);
+            return value;
+        }
+
+        public async Task<object> ActivateAsync(object view, TContext context)
+        {
+            var value = await _asyncValueAccessor(context);
             _fastPropertySetter(view, value);
             return value;
         }

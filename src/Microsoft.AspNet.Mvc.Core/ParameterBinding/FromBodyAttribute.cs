@@ -9,7 +9,7 @@ namespace Microsoft.AspNet.Mvc
     {
         public override IUberBinding GetBinding(Descriptor descriptor)
         {
-            throw new NotImplementedException();
+            return new BodyBinding();
         }
     }
 }

@@ -225,24 +225,66 @@ namespace Microsoft.AspNet.Mvc
             // This does not need to go recursively to all the descriptors.
             // TODO: Cache it. 
             // Also the property part should be fetched as soon as the controller is invoked. 
+            var actionBindingContext = await _bindingProvider.GetActionBindingContextAsync(ActionContext);
             var actionInvocationMetadata = GetActionInvocationMetadata();
-            var arguments = await GetActionArguments(actionInvocationMetadata);
+            await ActivateControllerProperties(actionInvocationMetadata, actionBindingContext);
+            var arguments = await GetActionArguments(actionInvocationMetadata, actionBindingContext);
             
             _actionExecutingContext = new ActionExecutingContext(ActionContext, _filters, arguments);
 
             await InvokeActionMethodFilter();
         }
 
-        //private async Task ActivateControllerProperties(ActionInvocationMetadata metadata)
-        //{
-        //    var invokedProperties = InvokeBindings(metadata.Properties);
-        //    var controllerType = ActionContext.Controller.GetType();
-        //    foreach (var item in invokedProperties)
-        //    {
+        private async Task ActivateControllerProperties(ActionInvocationMetadata metadata, ActionBindingContext actionBindingContext)
+        {
+            var controller = ActionContext.Controller;
 
-        //    }
-        //    var p = new PropertyActivator<UberBindingContext>()
-        //}
+            // TODO: this should be moved to options. 
+            var registeredValueAccessors = CreateValueAccessorLookup();
+            foreach (var property in metadata.Properties)
+            {
+                if (registeredValueAccessors.TryGetValue(property.Type, out var syncValueAccessor))
+                {
+                    var propactivator = new PropertyActivator<UberBindingContext>(property.PropertyInfo, syncValueAccessor);
+                    var uberContext = GetUberBindingContext(property, actionBindingContext);
+                    propactivator.Activate(controller, uberContext);
+                }
+                else
+                {
+                    Func<UberBindingContext, Task<object>> valueAccessor = async (uberbindingContext) =>
+                    {
+                        await property.Binding.BindAsync(uberbindingContext);
+                        return uberbindingContext.Model;
+                    };
+
+                    var propactivator = new PropertyActivator<UberBindingContext>(property.PropertyInfo, valueAccessor);
+                    var uberContext = GetUberBindingContext(property, actionBindingContext);
+                    await propactivator.ActivateAsync(controller, uberContext);
+                }
+            }
+        }
+
+        protected virtual IReadOnlyDictionary<Type, Func<UberBindingContext, object>> CreateValueAccessorLookup()
+        {
+            var dictionary = new Dictionary<Type, Func<UberBindingContext, object>>
+            {
+                { typeof(ActionContext), (context) => context.ActionContext },
+                { typeof(HttpContext), (context) => context.HttpContext },
+                { typeof(HttpRequest), (context) => context.HttpContext.Request },
+                { typeof(HttpResponse), (context) => context.HttpContext.Response },
+                {
+                    typeof(ViewDataDictionary),
+                    (context) =>
+                    {
+                        var serviceProvider = context.HttpContext.RequestServices;
+                        return new ViewDataDictionary(
+                            serviceProvider.GetService<IModelMetadataProvider>(),
+                            context.ModelState);
+                    }
+                }
+            };
+            return dictionary;
+        }
 
         private ActionInvocationMetadata GetActionInvocationMetadata()
         {
@@ -261,7 +303,8 @@ namespace Microsoft.AspNet.Mvc
                             {
                                 BindingAttributes = attributes,
                                 Name = property.Name,
-                                Type = property.PropertyType
+                                Type = property.PropertyType, 
+                                PropertyInfo = property
                             };
                         });
 
@@ -277,35 +320,45 @@ namespace Microsoft.AspNet.Mvc
 
         private BindingInfo GetBindingInfo(Descriptor desc)
         {
+            var propertyInfo = (desc as PropertyDescriptor)?.PropertyInfo;
             return new BindingInfo
             {
                 Binding = GetBinding(desc),
                 Name = desc.Name,
-                Type = desc.Type
+                Type = desc.Type,
+                PropertyInfo = propertyInfo,
             };
         }
 
-        internal async Task<IDictionary<string, object>> GetActionArguments(ActionInvocationMetadata metadata)
+        internal async Task<IDictionary<string, object>> GetActionArguments(ActionInvocationMetadata metadata, ActionBindingContext actionBindingContext)
         {
-            return await InvokeBindings(metadata.Parameters);
-        }
-
-        internal async Task<IDictionary<string, object>> InvokeBindings(IList<BindingInfo> infos)
-        {
-            var actionBindingContext = await _bindingProvider.GetActionBindingContextAsync(ActionContext);
             var metadataProvider = actionBindingContext.MetadataProvider;
-            var parameterValues = new Dictionary<string, object>(infos.Count, StringComparer.Ordinal);
-            foreach (var parameter in infos)
+            var parameterValues = new Dictionary<string, object>(metadata.Parameters.Count, StringComparer.Ordinal);
+            foreach (var parameter in metadata.Parameters)
             {
                 var modelMetadata = metadataProvider.GetMetadataForType(
                     modelAccessor: null,
                     modelType: parameter.Type);
-                var uberContext = new UberBindingContext()
+                var uberContext = GetUberBindingContext(parameter, actionBindingContext);
+                await parameter.Binding.BindAsync(uberContext);
+                parameterValues[parameter.Name] = uberContext.Model;
+            }
+
+            return parameterValues;
+        }
+
+        private UberBindingContext GetUberBindingContext(BindingInfo info, ActionBindingContext actionBindingContext)
+        {
+            var metadataProvider = actionBindingContext.MetadataProvider;
+                var modelMetadata = metadataProvider.GetMetadataForType(
+                    modelAccessor: null,
+                    modelType: info.Type);
+                return new UberBindingContext()
                 {
-                    //ActionContext = ActionContext,
+                    ActionContext = ActionContext,
                     HttpContext = ActionContext.HttpContext,
                     ModelState = ActionContext.ModelState,
-                    ModelName = parameter.Name,
+                    ModelName = info.Name,
                     ModelMetadata = modelMetadata,
                     ModelBinder = actionBindingContext.ModelBinder,
                     ValueProvider = actionBindingContext.ValueProvider,
@@ -314,13 +367,7 @@ namespace Microsoft.AspNet.Mvc
                     // FallbackToEmptyPrefix = true
                 };
 
-                await parameter.Binding.BindAsync(uberContext);
-                parameterValues[parameter.Name] = uberContext.Model;
-            }
-
-            return parameterValues;
         }
-
         private IUberBinding GetBinding(Descriptor descriptor)
         {
             foreach (var uberBinding in descriptor.BindingAttributes)

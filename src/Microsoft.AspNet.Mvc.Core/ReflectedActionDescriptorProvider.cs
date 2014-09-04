@@ -155,6 +155,7 @@ namespace Microsoft.AspNet.Mvc
                         parameterDescriptors.Add(new ParameterDescriptor()
                         {
                             Name = parameter.ParameterName,
+                            Type = parameter.ParameterInfo.ParameterType,
                             IsOptional = parameter.IsOptional,
                             BindingAttributes = bindingAttributes,
                             ParameterBindingInfo = isFromBody

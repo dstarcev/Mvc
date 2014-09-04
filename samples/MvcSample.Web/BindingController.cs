@@ -24,7 +24,7 @@ namespace MvcSample.Web.RandomNameSpace
             stringBuilder.AppendLine("ModelBoundComplexObject:Person.Age: " + person.Age);
             stringBuilder.AppendLine("ModelBoundComplexObject:Person.Parent: " + person.Parent); 
 
-            stringBuilder.AppendLine("ModelBoundComplexObject:HawaianPerson.Age: " + hawainPerson.Age);
+            stringBuilder.AppendLine("ModelBoundComplexObject:HawaianPerson.Age: " + hawainPerson?.Age);
             return stringBuilder.ToString();
         }
     }

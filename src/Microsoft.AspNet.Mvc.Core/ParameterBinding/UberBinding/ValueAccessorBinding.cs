@@ -12,7 +12,6 @@ namespace Microsoft.AspNet.Mvc
     {
         private readonly IDictionary<Type, Func<HttpContext, object>> _valueAccessorLookup
             = new Dictionary<Type, Func<HttpContext, object>>();
-        private Func<ActionContext, object> _valueAccessor;
 
         public void AddOrUpdateAccessor(Type type, Func<HttpContext, object> valueAccesor)
         {

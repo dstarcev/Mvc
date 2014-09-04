@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection;
 using Microsoft.AspNet.Mvc.ModelBinding;
 
 namespace Microsoft.AspNet.Mvc
@@ -44,5 +45,8 @@ namespace Microsoft.AspNet.Mvc
         public string Name { get; set; }
         public Type Type { get; set; }
         public IUberBinding Binding { get; set; }
+
+        public PropertyInfo PropertyInfo { get; set; }
+        public ParameterInfo ParameterInfo { get; set; }
     }
 }

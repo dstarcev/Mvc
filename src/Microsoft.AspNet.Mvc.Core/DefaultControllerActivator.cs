@@ -64,11 +64,11 @@ namespace Microsoft.AspNet.Mvc
             var propertiesToActivate = _injectActions.GetOrAdd(controllerType,
                                                                _getPropertiesToActivate);
 
-            for (var i = 0; i < propertiesToActivate.Length; i++)
-            {
-                var activateInfo = propertiesToActivate[i];
-                activateInfo.Activate(controller, context);
-            }
+            //for (var i = 0; i < propertiesToActivate.Length; i++)
+            //{
+            //    var activateInfo = propertiesToActivate[i];
+            //    activateInfo.Activate(controller, context);
+            //}
         }
 
         protected virtual IReadOnlyDictionary<Type, Func<ActionContext, object>> CreateValueAccessorLookup()
