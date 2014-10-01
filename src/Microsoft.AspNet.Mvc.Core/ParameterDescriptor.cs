@@ -11,6 +11,10 @@ namespace Microsoft.AspNet.Mvc
 
         public bool IsOptional { get; set; }
 
+        public Type ParameterType { get; private set; }
+
+        public object BinderMetadata { get; set; }
+
         public ParameterBindingInfo ParameterBindingInfo { get; set; }
 
         public BodyParameterInfo BodyParameterInfo { get; set; }

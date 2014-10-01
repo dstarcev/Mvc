@@ -28,11 +28,11 @@ namespace Microsoft.AspNet.Mvc
                 // TODO: Artifitially annotate the parameter with a BindAlwaysAttribute
                 // to ensure that the top level object is not null.
                 // This is to have compat with mvc. 
-                var parameterAttributes = parameter.ParameterBindingInfo.Attributes;
+                var parameterMetadata = parameter.BinderMetadata;
                 return metadataProvider.GetMetadataForParameter(
                     modelAccessor: null,
                     parameterType: parameterType,
-                    parameterAttributes: parameterAttributes,
+                    parameterMetadata: parameterMetadata,
                     parameterName: parameter.Name);
             });
 

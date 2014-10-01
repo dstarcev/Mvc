@@ -42,6 +42,8 @@ namespace Microsoft.AspNet.Mvc
             yield return describe.Transient<IActionDiscoveryConventions, DefaultActionDiscoveryConventions>();
             yield return describe.Transient<IActionInvocationInfoBinder, DefaultActionInvocationInfoBinder>();
 
+            yield return describe.Transient<IBinderMarkerProvider, DefaultBinderMarkerProvider>();
+
             // The host is designed to be discarded after consumption and is very inexpensive to initialize.
             yield return describe.Transient<IMvcRazorHost, MvcRazorHost>();
 

@@ -256,6 +256,7 @@ namespace Microsoft.AspNet.Mvc
                 }
 
                 parameterDescriptors.Add(paramDescriptor);
+                paramDescriptor.BinderMetadata = parameter.BinderMetadata;
             }
 
             var attributeRouteInfo = CreateAttributeRouteInfo(action, controller);

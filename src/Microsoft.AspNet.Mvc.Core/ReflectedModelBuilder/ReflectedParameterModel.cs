@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Microsoft.AspNet.Mvc.ModelBinding;
 
 namespace Microsoft.AspNet.Mvc.ReflectedModelBuilder
 {
@@ -19,9 +20,20 @@ namespace Microsoft.AspNet.Mvc.ReflectedModelBuilder
 
             ParameterName = parameterInfo.Name;
             IsOptional = ParameterInfo.HasDefaultValue;
+
+            var binderMarker  = Attributes.OfType<IBinderMarker>().FirstOrDefault();
+            var binderFactory = Attributes.OfType<IBinderFactory>().FirstOrDefault();
+
+            BinderMetadata = binderMarker;
+            if (binderMarker == null)
+            {
+                BinderMetadata = binderFactory;
+            }
         }
 
         public List<object> Attributes { get; private set; }
+
+        public object BinderMetadata { get; set; }
 
         public bool IsOptional { get; set; }
 

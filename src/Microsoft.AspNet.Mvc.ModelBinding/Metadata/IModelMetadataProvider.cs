@@ -15,6 +15,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
         ModelMetadata GetMetadataForType(Func<object> modelAccessor, Type modelType);
 
-        ModelMetadata GetMetadataForParameter(Func<object> modelAccessor, Type parameterType, IEnumerable<Attribute> parameterAttributes, string parameterName);
+        ModelMetadata GetMetadataForParameter(Func<object> modelAccessor, Type parameterType, object parameterMetadata, string parameterName);
     }
 }

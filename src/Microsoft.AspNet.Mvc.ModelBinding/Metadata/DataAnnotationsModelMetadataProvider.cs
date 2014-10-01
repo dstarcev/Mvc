@@ -8,6 +8,10 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 {
     public class DataAnnotationsModelMetadataProvider : AssociatedMetadataProvider<CachedDataAnnotationsModelMetadata>
     {
+        public DataAnnotationsModelMetadataProvider(IBinderMarkerProvider binderMarkerProvider) : base(binderMarkerProvider)
+        {
+        }
+
         protected override CachedDataAnnotationsModelMetadata CreateMetadataPrototype(
             IEnumerable<Attribute> attributes, 
             Type containerType, 

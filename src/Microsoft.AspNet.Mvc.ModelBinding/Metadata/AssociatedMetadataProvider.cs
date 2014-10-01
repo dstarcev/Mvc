@@ -14,6 +14,12 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
     {
         private readonly ConcurrentDictionary<Type, TypeInformation> _typeInfoCache =
                 new ConcurrentDictionary<Type, TypeInformation>();
+        private IBinderMarkerProvider _binderMarkerProvider;
+
+        public AssociatedMetadataProvider(IBinderMarkerProvider markerProvider)
+        {
+            _binderMarkerProvider = markerProvider;
+        }
 
         public IEnumerable<ModelMetadata> GetMetadataForProperties(object container, [NotNull] Type containerType)
         {
@@ -46,9 +52,9 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             return CreateMetadataFromPrototype(prototype, modelAccessor);
         }
 
-        public ModelMetadata GetMetadataForParameter(Func<object> modelAccessor, Type parameterType, IEnumerable<Attribute> parameterAttributes, string parameterName)
+        public ModelMetadata GetMetadataForParameter(Func<object> modelAccessor, Type parameterType, object parameterMetadata, string parameterName)
         {
-            var parameterInfo = CreateParameterInfo(parameterType, parameterAttributes, parameterName);
+            var parameterInfo = CreateParameterInfo(parameterType, parameterMetadata, parameterName);
             var typePrototype = GetTypeInformation(parameterType).Prototype;
             parameterInfo.Prototype.Marker = parameterInfo.Prototype.Marker ?? typePrototype.Marker;
 
@@ -159,15 +165,25 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             };
         }
 
-        private ParameterInformation CreateParameterInfo(Type parameterType, IEnumerable<Attribute> parameterAttributes, string parameterName)
+        private ParameterInformation CreateParameterInfo(Type parameterType, object parameterMetadata, string parameterName)
         {
-            return new ParameterInformation
-            {
-                Prototype = CreateMetadataPrototype(parameterAttributes,
+            
+            var metadataProtoType = CreateMetadataPrototype(attributes: Enumerable.Empty<Attribute>(),
                                                     containerType: null,
                                                     modelType: parameterType,
-                                                    propertyName: parameterName)
+                                                    propertyName: parameterName);
 
+            var providerContext = new MarkerProviderContext()
+            {
+                ArtifactModelMetadata = metadataProtoType,
+                MarkerMetadata = parameterMetadata
+            };
+
+            var parameterMarker = _binderMarkerProvider.ProvideMarker(providerContext);
+            metadataProtoType.Marker = parameterMarker;
+            return new ParameterInformation
+            {
+                Prototype =  metadataProtoType
             };
         }
 
