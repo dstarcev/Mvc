@@ -58,7 +58,7 @@ namespace Microsoft.AspNet.Mvc
             var formatterContext = new OutputFormatterContext()
             {
                 Object = null,
-                DeclaredType = typeof(string), 
+                DeclaredType = typeof(string),
             };
 
             var tempMemoryStream = new MemoryStream();

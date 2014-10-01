@@ -29,7 +29,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             {
                 ModelMetadata = GetMetadataForObject(new Person()),
                 ModelName = "someName",
-                ValueProvider = mockValueProvider.Object,
+                ValueProviders = mockValueProvider.Object,
                 ModelBinder = mockDtoBinder.Object,
                 MetadataProvider = new DataAnnotationsModelMetadataProvider(),
                 ValidatorProvider = Mock.Of<IModelValidatorProvider>()

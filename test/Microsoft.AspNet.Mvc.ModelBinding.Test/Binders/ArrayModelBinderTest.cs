@@ -70,16 +70,16 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             var mockIntBinder = new Mock<IModelBinder>();
             mockIntBinder
                 .Setup(o => o.BindModelAsync(It.IsAny<ModelBindingContext>()))
-                .Returns(async (ModelBindingContext mbc) =>
+                .Returns((System.Func<ModelBindingContext, Task<bool>>)(async (ModelBindingContext mbc) =>
                 {
-                    var value = await mbc.ValueProvider.GetValueAsync(mbc.ModelName);
+                    var value = await mbc.ValueProviders.GetValueAsync(mbc.ModelName);
                     if (value != null)
                     {
                         mbc.Model = value.ConvertTo(mbc.ModelType);
                         return true;
                     }
                     return false;
-                });
+                }));
             return mockIntBinder.Object;
         }
 
@@ -90,7 +90,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             {
                 ModelMetadata = metadataProvider.GetMetadataForType(null, typeof(int[])),
                 ModelName = "someName",
-                ValueProvider = valueProvider,
+                ValueProviders = valueProvider,
                 ModelBinder = CreateIntBinder(),
                 MetadataProvider = metadataProvider
             };

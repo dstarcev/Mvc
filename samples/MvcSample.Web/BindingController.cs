@@ -52,6 +52,10 @@ namespace MvcSample.Web.RandomNameSpace
             return stringBuilder.ToString();
         }
 
+        public void MarkerProvider(ExternalType external)
+        {
+        }
+
         public string GetEmployerName(Employer emp)
         {
             return emp.Name;
@@ -119,4 +123,14 @@ namespace MvcSample.Web.RandomNameSpace
         // Should be set to null
         public Person Parent { get; set; }
     }
+
+    /// <summary>
+    /// Represents a type present externally 
+    /// (and hence cannot be updated with any attirbute on the property).
+    /// </summary>
+    public class ExternalType
+    {
+        public int InterestingProperty { get; set; }
+    }
+
 }

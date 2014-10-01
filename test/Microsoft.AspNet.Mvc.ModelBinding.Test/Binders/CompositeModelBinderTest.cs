@@ -27,7 +27,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
                 ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(int)),
                 ModelName = "someName",
                 ModelState = new ModelStateDictionary(),
-                ValueProvider = new SimpleHttpValueProvider
+                ValueProviders = new SimpleHttpValueProvider
                 {
                     { "someName", "dummyValue" }
                 },
@@ -38,11 +38,11 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             mockIntBinder
                 .Setup(o => o.BindModelAsync(It.IsAny<ModelBindingContext>()))
                 .Returns(
-                    delegate (ModelBindingContext context)
+(Func<ModelBindingContext, Task<bool>>)delegate (ModelBindingContext context)
                     {
                         Assert.Same(bindingContext.ModelMetadata, context.ModelMetadata);
                         Assert.Equal("someName", context.ModelName);
-                        Assert.Same(bindingContext.ValueProvider, context.ValueProvider);
+                        Assert.Same((object)bindingContext.ValueProviders, (object)context.ValueProviders);
 
                         context.Model = 42;
                         bindingContext.ValidationNode.Validating += delegate { validationCalled = true; };
@@ -74,7 +74,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
                 ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(List<int>)),
                 ModelName = "someName",
                 ModelState = new ModelStateDictionary(),
-                ValueProvider = new SimpleHttpValueProvider
+                ValueProviders = new SimpleHttpValueProvider
                 {
                     { "someOtherName", "dummyValue" }
                 },
@@ -85,7 +85,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             mockIntBinder
                 .Setup(o => o.BindModelAsync(It.IsAny<ModelBindingContext>()))
                 .Returns(
-                    delegate (ModelBindingContext mbc)
+(Func<ModelBindingContext, Task<bool>>)delegate (ModelBindingContext mbc)
                     {
                         if (!string.IsNullOrEmpty(mbc.ModelName))
                         {
@@ -94,7 +94,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
 
                         Assert.Same(bindingContext.ModelMetadata, mbc.ModelMetadata);
                         Assert.Equal("", mbc.ModelName);
-                        Assert.Same(bindingContext.ValueProvider, mbc.ValueProvider);
+                        Assert.Same((object)bindingContext.ValueProviders, (object)mbc.ValueProviders);
 
                         mbc.Model = expectedModel;
                         mbc.ValidationNode.Validating += delegate { validationCalled = true; };
@@ -280,7 +280,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
                 MetadataProvider = metadataProvider,
                 ModelMetadata = metadataProvider.GetMetadataForType(null, type),
                 ModelState = new ModelStateDictionary(),
-                ValueProvider = valueProvider,
+                ValueProviders = valueProvider,
                 ValidatorProvider = validatorProvider
             };
             return bindingContext;

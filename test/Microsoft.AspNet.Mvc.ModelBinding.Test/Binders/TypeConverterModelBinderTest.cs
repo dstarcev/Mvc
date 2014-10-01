@@ -19,7 +19,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
         {
             // Arrange
             var bindingContext = GetBindingContext(destinationType);
-            bindingContext.ValueProvider = new SimpleHttpValueProvider
+            bindingContext.ValueProviders = new SimpleHttpValueProvider
             {
                 { "theModelName", "some-value" }
             };
@@ -44,7 +44,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
         {
             // Arrange
             var bindingContext = GetBindingContext(destinationType);
-            bindingContext.ValueProvider = new SimpleHttpValueProvider
+            bindingContext.ValueProviders = new SimpleHttpValueProvider
             {
                 { "theModelName", "some-value" }
             };
@@ -63,7 +63,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
         {
             // Arrange
             ModelBindingContext bindingContext = GetBindingContext(typeof(int));
-            bindingContext.ValueProvider = new SimpleHttpValueProvider
+            bindingContext.ValueProviders = new SimpleHttpValueProvider
             {
                 { "theModelName", "not an integer" }
             };
@@ -101,7 +101,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
         {
             // Arrange
             ModelBindingContext bindingContext = GetBindingContext(typeof(string));
-            bindingContext.ValueProvider = new SimpleHttpValueProvider
+            bindingContext.ValueProviders = new SimpleHttpValueProvider
             {
                 { "theModelName", "" }
             };
@@ -122,7 +122,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
         {
             // Arrange
             ModelBindingContext bindingContext = GetBindingContext(typeof(int));
-            bindingContext.ValueProvider = new SimpleHttpValueProvider
+            bindingContext.ValueProviders = new SimpleHttpValueProvider
             {
                 { "theModelName", "42" }
             };
@@ -144,7 +144,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             {
                 ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, modelType),
                 ModelName = "theModelName",
-                ValueProvider = new SimpleHttpValueProvider() // empty
+                ValueProviders = new SimpleHttpValueProvider() // empty
             };
         }
 

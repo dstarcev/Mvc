@@ -20,7 +20,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             {
                 ModelMetadata = metadataProvider.GetMetadataForType(null, typeof(IDictionary<int, string>)),
                 ModelName = "someName",
-                ValueProvider = new SimpleHttpValueProvider
+                ValueProviders = new SimpleHttpValueProvider
                 {
                     { "someName[0]", new KeyValuePair<int, string>(42, "forty-two") },
                     { "someName[1]", new KeyValuePair<int, string>(84, "eighty-four") }
@@ -48,16 +48,16 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             Mock<IModelBinder> mockKvpBinder = new Mock<IModelBinder>();
             mockKvpBinder
                 .Setup(o => o.BindModelAsync(It.IsAny<ModelBindingContext>()))
-                .Returns(async (ModelBindingContext mbc) =>
+                .Returns((System.Func<ModelBindingContext, Task<bool>>)(async (ModelBindingContext mbc) =>
                 {
-                    var value = await mbc.ValueProvider.GetValueAsync(mbc.ModelName);
+                    var value = await mbc.ValueProviders.GetValueAsync(mbc.ModelName);
                     if (value != null)
                     {
                         mbc.Model = value.ConvertTo(mbc.ModelType);
                         return true;
                     }
                     return false;
-                });
+                }));
             return mockKvpBinder.Object;
         }
     }

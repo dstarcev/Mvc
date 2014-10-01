@@ -18,7 +18,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
                 ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(object)),
                 ModelName = "theName",
                 ModelState = new ModelStateDictionary(),
-                ValueProvider = new SimpleHttpValueProvider()
+                ValueProviders = new SimpleHttpValueProvider()
             };
 
             // Act
@@ -28,7 +28,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             Assert.Null(newBindingContext.ModelMetadata);
             Assert.Equal("", newBindingContext.ModelName);
             Assert.Equal(originalBindingContext.ModelState, newBindingContext.ModelState);
-            Assert.Equal(originalBindingContext.ValueProvider, newBindingContext.ValueProvider);
+            Assert.Equal(originalBindingContext.ValueProviders, newBindingContext.ValueProviders);
         }
 
         [Fact]

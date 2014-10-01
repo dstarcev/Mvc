@@ -119,7 +119,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             {
                 ModelMetadata = metataProvider.GetMetadataForType(null, typeof(KeyValuePair<int, string>)),
                 ModelName = "someName",
-                ValueProvider = valueProvider,
+                ValueProviders = valueProvider,
                 ModelBinder = innerBinder ?? CreateIntBinder(),
                 MetadataProvider = metataProvider,
                 ValidatorProvider = Mock.Of<IModelValidatorProvider>()

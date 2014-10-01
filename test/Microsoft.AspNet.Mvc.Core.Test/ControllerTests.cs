@@ -561,13 +561,13 @@ namespace Microsoft.AspNet.Mvc.Test
         public async Task TryUpdateModel_UsesModelTypeNameIfNotSpecified()
         {
             var metadataProvider = new DataAnnotationsModelMetadataProvider();
-            var valueProvider = Mock.Of<IValueProvider>();
+            var valueProviders = Mock.Of<IReadOnlyList<IValueProvider>>();
             var binder = new Mock<IModelBinder>();
             binder.Setup(b => b.BindModelAsync(It.IsAny<ModelBindingContext>()))
                   .Callback((ModelBindingContext b) =>
                   {
                       Assert.Equal(typeof(MyModel).Name, b.ModelName);
-                      Assert.Same(valueProvider, b.ValueProvider);
+                      Assert.Same(valueProviders, b.ValueProviders);
                   })
                   .Returns(Task.FromResult(false))
                   .Verifiable();
@@ -576,7 +576,7 @@ namespace Microsoft.AspNet.Mvc.Test
             var bindingContext = new ActionBindingContext(actionContext,
                                                           metadataProvider,
                                                           binder.Object,
-                                                          valueProvider,
+                                                          valueProviders,
                                                           Mock.Of<IInputFormatterSelector>(),
                                                           Mock.Of<IModelValidatorProvider>());
             var bindingContextProvider = new Mock<IActionBindingContextProvider>();
@@ -605,11 +605,11 @@ namespace Microsoft.AspNet.Mvc.Test
             var binder = new Mock<IModelBinder>();
             var modelName = "mymodel";
             binder.Setup(b => b.BindModelAsync(It.IsAny<ModelBindingContext>()))
-                  .Callback((ModelBindingContext b) =>
+                  .Callback((System.Action<ModelBindingContext>)((ModelBindingContext b) =>
                   {
                       Assert.Equal(modelName, b.ModelName);
-                      Assert.Same(valueProvider, b.ValueProvider);
-                  })
+                      Assert.Same(valueProvider, (object)b.ValueProviders);
+                  }))
                   .Returns(Task.FromResult(false))
                   .Verifiable();
             var model = new MyModel();
@@ -646,11 +646,11 @@ namespace Microsoft.AspNet.Mvc.Test
             var binder = new Mock<IModelBinder>();
             var modelName = "mymodel";
             binder.Setup(b => b.BindModelAsync(It.IsAny<ModelBindingContext>()))
-                  .Callback((ModelBindingContext b) =>
+                  .Callback((System.Action<ModelBindingContext>)((ModelBindingContext b) =>
                   {
                       Assert.Equal(modelName, b.ModelName);
-                      Assert.Same(valueProvider, b.ValueProvider);
-                  })
+                      Assert.Same(valueProvider, (object)b.ValueProviders);
+                  }))
                   .Returns(Task.FromResult(false))
                   .Verifiable();
             var model = new MyModel();
