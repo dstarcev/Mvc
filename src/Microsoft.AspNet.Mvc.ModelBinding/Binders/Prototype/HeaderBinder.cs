@@ -12,8 +12,9 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
     {
         public override Task<bool> BindAsync(ModelBindingContext bindingContext)
         {
+            string[] headerValue;
             // TODO: Add the piece which looks at type converter.
-            if(bindingContext.HttpContext.Request.Headers.TryGetValue(Marker.HeaderKey, out var headerValue))
+            if (bindingContext.HttpContext.Request.Headers.TryGetValue(Marker.HeaderKey, out headerValue))
             {
                 // TODO: if this is a collection or it supports typeconverter, do that here. 
                 bindingContext.Model = headerValue.First();

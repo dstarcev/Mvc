@@ -142,7 +142,7 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
 
             if (embeddedReference != null)
             {
-                return new MetadataImageReference(embeddedReference.Contents);
+                return MetadataReference.CreateFromImage(embeddedReference.Contents);
             }
 
             var fileMetadataReference = metadataReference as IMetadataFileReference;
@@ -161,7 +161,7 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
 
                     ms.Seek(0, SeekOrigin.Begin);
 
-                    return new MetadataImageReference(ms);
+                    return MetadataReference.CreateFromImage(ms.ToArray());
                 }
             }
 
@@ -176,7 +176,7 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
                 // read files from anywhere on disk, not just under the web root
                 using (var stream = File.OpenRead(path))
                 {
-                    return new MetadataImageReference(stream);
+                    return MetadataReference.CreateFromStream(stream);
                 }
             });
         }

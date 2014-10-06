@@ -43,7 +43,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 ModelBinder = bindingContext.ModelBinder;
                 ValidatorProvider = bindingContext.ValidatorProvider;
                 HttpContext = bindingContext.HttpContext;
-                EnableAutoValueBindingForUnmarkedModels = bindingContext.EnableAutoValueBindingForUnmarkedModels;
                 OriginalValueProviders = bindingContext.OriginalValueProviders;
             }
         }
@@ -128,11 +127,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         /// <see cref="ModelName"/> prefix.
         /// </summary>
         public bool FallbackToEmptyPrefix { get; set; }
-
-        /// <summary>
-        /// Tells the modelbinding system to also bind properties of a model without an explicit marker.
-        /// </summary>
-        public bool EnableAutoValueBindingForUnmarkedModels { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="HttpContext"/> for the current request.

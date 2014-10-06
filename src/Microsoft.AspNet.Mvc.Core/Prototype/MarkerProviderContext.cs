@@ -1,12 +1,17 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using Microsoft.AspNet.Mvc.ModelBinding;
+using System;
 
 namespace Microsoft.AspNet.Mvc.ModelBinding
 {
-    public interface IBinderMarkerProvider
+    public class MarkerProviderContext
     {
-        IBinderMarker ProvideMarker(MarkerProviderContext context);
+        public MarkerProviderContext(BinderItem item)
+        {
+            Result = item;
+        }
+
+        public BinderItem Result { get; set; }
     }
 }

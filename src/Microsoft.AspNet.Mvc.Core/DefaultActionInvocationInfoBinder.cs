@@ -6,38 +6,50 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc.ModelBinding;
 using System.Linq;
+using Microsoft.Framework.DependencyInjection;
 
 namespace Microsoft.AspNet.Mvc
 {
     public class DefaultActionInvocationInfoBinder : IActionInvocationInfoBinder
     {
+        private INestedProviderManager<MarkerProviderContext> _binderMetadataProviderManager;
+
+        public DefaultActionInvocationInfoBinder([NotNull] INestedProviderManager<MarkerProviderContext> binderMetadataProviderManager)
+        {
+            _binderMetadataProviderManager = binderMetadataProviderManager;
+        }
+
         public async Task<IDictionary<string, object>> GetActionInvocationInfoAsync(ActionBindingContext actionBindingContext)
         {
             var modelState = actionBindingContext.ActionContext.ModelState;
             var metadataProvider = actionBindingContext.MetadataProvider;
 
+            var parameterValues = new ActionRuntimeParameterInfo(actionBindingContext.ActionContext.Controller);
             var controller = actionBindingContext.ActionContext.Controller;
-            var controllerMetadatas = metadataProvider.GetMetadataForProperties(controller, controller.GetType())
-                                                      .Where(metadata => metadata.Marker != null);
+            if (controller != null)
+            {
+                var controllerMetadatas = metadataProvider.GetMetadataForProperties(controller, controller.GetType())
+                                                          .Where(metadata => metadata.Marker != null);
+                await PopulateActionInvocationInfoAsync(controllerMetadatas, actionBindingContext, false, parameterValues);
+            }
 
             var parameters = actionBindingContext.ActionContext.ActionDescriptor.Parameters;
             var parameterMetadatas = parameters.Select(parameter =>
             {
-                var parameterType = parameter.ParameterBindingInfo.ParameterType;
+                var parameterType = parameter.ParameterType;
 
                 // TODO: Artifitially annotate the parameter with a BindAlwaysAttribute
                 // to ensure that the top level object is not null.
                 // This is to have compat with mvc. 
-                var parameterMetadata = parameter.BinderMetadata;
+                var binderItem = GetBinderItem(parameter.BinderMetadata);
+                var parameterMarker = binderItem.BinderMarker;
                 return metadataProvider.GetMetadataForParameter(
                     modelAccessor: null,
                     parameterType: parameterType,
-                    parameterMetadata: parameterMetadata,
+                    parameterMetadata: parameterMarker,
                     parameterName: parameter.Name);
             });
 
-            var parameterValues = new ActionRuntimeParameterInfo(actionBindingContext.ActionContext.Controller);
-            await PopulateActionInvocationInfoAsync(controllerMetadatas, actionBindingContext, false, parameterValues);
             await PopulateActionInvocationInfoAsync(parameterMetadatas, actionBindingContext, true, parameterValues);
             return parameterValues;
         }
@@ -61,7 +73,6 @@ namespace Microsoft.AspNet.Mvc
                     MetadataProvider = actionBindingContext.MetadataProvider,
                     HttpContext = actionBindingContext.ActionContext.HttpContext,
                     FallbackToEmptyPrefix = true,
-                    EnableAutoValueBindingForUnmarkedModels = enableValueProviderBasedBinding,
                     ValueProviders = actionBindingContext.ValueProviders,
                 };
 
@@ -70,6 +81,14 @@ namespace Microsoft.AspNet.Mvc
                     parameterValues[modelMetadata.PropertyName] = modelBindingContext.Model;
                 }
             }
+        }
+
+        private BinderItem GetBinderItem(IBinderMetadata binderMetadata)
+        {
+            var item = new BinderItem(binderMetadata);
+            var providerContext = new MarkerProviderContext(item);
+            _binderMetadataProviderManager.Invoke(providerContext);
+            return providerContext.Result;
         }
     }
 }

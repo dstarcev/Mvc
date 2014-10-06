@@ -37,7 +37,8 @@ namespace Microsoft.AspNet.Mvc
             set
             {
                 _actionParameters[key] = value;
-                if (_controllerProperties.TryGetValue(key, out var accessor))
+                ControllerPropertyAccessor accessor;
+                if (_controllerProperties.TryGetValue(key, out accessor))
                 {
                     accessor.Set(_controllerObject, value);
                 }
@@ -84,7 +85,8 @@ namespace Microsoft.AspNet.Mvc
         public void Add(string key, object value)
         {
             _actionParameters.Add(key, value);
-            if (_controllerProperties.TryGetValue(key, out var accessor))
+            ControllerPropertyAccessor accessor;
+            if (_controllerProperties.TryGetValue(key, out accessor))
             {
                 accessor.Set(_controllerObject, value);
             }
@@ -125,7 +127,8 @@ namespace Microsoft.AspNet.Mvc
 
         public bool Remove(string key)
         {
-            if(_controllerProperties.TryGetValue(key, out var accessor))
+            ControllerPropertyAccessor accessor;
+            if(_controllerProperties.TryGetValue(key, out accessor))
             {
                 accessor.Set(_controllerObject, null);
                 return true;

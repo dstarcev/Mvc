@@ -4,10 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#if ASPNETCORE50
 using System.Reflection;
-#endif
 using Microsoft.AspNet.Mvc.Core;
+using Microsoft.AspNet.Mvc.ModelBinding;
 using Microsoft.AspNet.Mvc.ReflectedModelBuilder;
 using Microsoft.AspNet.Mvc.Routing;
 using Microsoft.AspNet.Routing;
@@ -99,9 +98,10 @@ namespace Microsoft.AspNet.Mvc
                         actionModel.IsActionNameMatchRequired = actionInfo.RequireActionNameMatch;
                         actionModel.HttpMethods.AddRange(actionInfo.HttpMethods ?? Enumerable.Empty<string>());
 
-                        foreach (var parameter in methodInfo.GetParameters())
+                        foreach (var parameterInfo in methodInfo.GetParameters())
                         {
-                            actionModel.Parameters.Add(new ReflectedParameterModel(parameter));
+                            var parameterModel = CreateParameterModel(actionModel, parameterInfo);
+                            actionModel.Parameters.Add(parameterModel);
                         }
 
                         controllerModel.Actions.Add(actionModel);
@@ -227,6 +227,26 @@ namespace Microsoft.AspNet.Mvc
             return actions;
         }
 
+        private ReflectedParameterModel CreateParameterModel(
+             ReflectedActionModel actionModel,
+             ParameterInfo parameterInfo)
+        {
+            var parameterModel = new ReflectedParameterModel(parameterInfo)
+            {
+                Action = actionModel,
+            };
+
+            // CoreCLR returns IEnumerable<Attribute> from GetCustomAttributes - the OfType<object>
+            // is needed to so that the result of ToList() is List<object>
+            var attributes = parameterInfo.GetCustomAttributes(inherit: true).OfType<object>().ToList();
+            parameterModel.Attributes.AddRange(attributes);
+
+            parameterModel.ParameterName = parameterInfo.Name;
+            parameterModel.IsOptional = parameterInfo.HasDefaultValue;
+            parameterModel.BinderMetadata = attributes.OfType<IBinderMetadata>().FirstOrDefault();
+            return parameterModel;
+        }
+
         private static ReflectedActionDescriptor CreateActionDescriptor(ReflectedActionModel action,
             ReflectedControllerModel controller,
             ControllerDescriptor controllerDescriptor,
@@ -251,8 +271,7 @@ namespace Microsoft.AspNet.Mvc
                 {
                     paramDescriptor.ParameterBindingInfo = new ParameterBindingInfo(
                             parameter.ParameterName,
-                            parameter.ParameterInfo.ParameterType, 
-                            parameter.Attributes.OfType<Attribute>());
+                            parameter.ParameterInfo.ParameterType);
                 }
 
                 parameterDescriptors.Add(paramDescriptor);

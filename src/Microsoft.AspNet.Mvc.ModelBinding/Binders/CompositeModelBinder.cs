@@ -127,7 +127,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 MetadataProvider = oldBindingContext.MetadataProvider,
                 ModelBinder = oldBindingContext.ModelBinder,
                 HttpContext = oldBindingContext.HttpContext,
-                EnableAutoValueBindingForUnmarkedModels = oldBindingContext.EnableAutoValueBindingForUnmarkedModels,
             };
 
             // validation is expensive to create, so copy it over if we can

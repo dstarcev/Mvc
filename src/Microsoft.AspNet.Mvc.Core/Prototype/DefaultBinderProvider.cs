@@ -3,16 +3,30 @@
 
 using System;
 using Microsoft.AspNet.Mvc.ModelBinding;
+using Microsoft.Framework.DependencyInjection;
 
 namespace Microsoft.AspNet.Mvc
 {
-    public class DefaultBinderMarkerProvider : IBinderProvider
+    public class DefaultBinderProvider : INestedProvider<MarkerProviderContext>
     {
         private IServiceProvider _serviceProvider;
 
-        public DefaultBinderMarkerProvider(IServiceProvider serviceProvider)
+        public DefaultBinderProvider(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+        }
+
+        public int Order
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public void Invoke(MarkerProviderContext context, Action callNext)
+        {
+            throw new NotImplementedException();
         }
 
         public IModelBinder ProvideBinder(MarkerProviderContext providerContext)

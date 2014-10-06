@@ -41,7 +41,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             return CanUpdatePropertyInternal(propertyMetadata);
         }
 
-        private async Task<bool> CanCreateModel(ModelBindingContext bindingContext)
+        internal async Task<bool> CanCreateModel(ModelBindingContext bindingContext)
         {
             // The fact that this has reached here, 
             // it is a complex object which was not directly boud by any model binders. 
@@ -67,12 +67,13 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             // where a value provider might be willing to provide a marked property, which might never be bound.
             // For example if person.Name is marked with FromQuery, and FormValueProvider has a key person.Name, and the
             // QueryValueProvider does not, we do not want to create Person.
-            var propertyMetadatas = GetMetadataForProperties(bindingContext);
+            var propertyMetadatas = GetMetadataForProperties(bindingContext).ToArray();
             bool isAnyPropertyEnabledForValueProviderBasedBinding = false;
             foreach (var propertyMetadata in propertyMetadatas)
             {
+                // This check will skip properties which are marked explicitly using a non value binder.
                 if (propertyMetadata.IsExplicitlyMarkedUsingAValueBinderMarker ||
-                    propertyMetadata.Marker == null && bindingContext.EnableAutoValueBindingForUnmarkedModels)
+                    propertyMetadata.Marker == null)
                 {
                     isAnyPropertyEnabledForValueProviderBasedBinding = true;
                     // If any property can return a true value.
@@ -85,7 +86,8 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             if(!isAnyPropertyEnabledForValueProviderBasedBinding)
             {
-                // This is a marker poco;
+                // Either there are no properties or all the properties are marked as
+                // a non value provider based marker.
                 return true;
             }
 
@@ -173,9 +175,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 ModelMetadata = bindingContext.MetadataProvider.GetMetadataForType(() => originalDto,
                                                                                    typeof(ComplexModelDto)),
                 ModelName = bindingContext.ModelName, 
-
-                // Try to bind deeper properties if a value provider can provide a value.
-                EnableAutoValueBindingForUnmarkedModels = true
             };
 
             bindingContext.ModelBinder.BindModelAsync(dtoBindingContext);
@@ -228,7 +227,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             var validationInfo = GetPropertyValidationInfo(bindingContext);
             return bindingContext.ModelMetadata.Properties
                                  .Where(propertyMetadata =>
-                                    (propertyMetadata.Marker != null || bindingContext.EnableAutoValueBindingForUnmarkedModels) &&
+                                   // (propertyMetadata.Marker != null || bindingContext.EnableAutoValueBindingForUnmarkedModels) &&
                                     (validationInfo.RequiredProperties.Contains(propertyMetadata.PropertyName) ||
                                     !validationInfo.SkipProperties.Contains(propertyMetadata.PropertyName)) &&
                                     CanUpdateProperty(propertyMetadata));

@@ -1,13 +1,12 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
 using Microsoft.AspNet.Mvc.ModelBinding;
 
-namespace Microsoft.AspNet.Mvc
+namespace Microsoft.AspNet.Mvc.ModelBinding
 {
-    public interface IBinderFactory
+    public interface IBinderProvider : IBinderMetadata
     {
-        IModelBinder CreateInstance([NotNull] IServiceProvider serviceProvider);
+        IModelBinder ProvideBinder(MarkerProviderContext context);
     }
 }

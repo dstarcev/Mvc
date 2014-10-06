@@ -8,7 +8,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
     /// <summary>
     /// Represents a marker used to identify a particular binder applies to an artifact.
     /// </summary>
-    public interface IBinderMarker
+    public interface IBinderMarker : IBinderMetadata
     {
     }
 }

@@ -25,7 +25,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         /// <returns>The value object for the specified key. If the exact key is not found, null.</returns>
         Task<ValueProviderResult> GetValueAsync(string key);
 
-        bool IsValidFor(Type valueProviderType);
+        bool IsValidFor(Type valueProviderMarkerType);
         
  //        bool IsValidFor<T>() where T : IValueBinderMarker;
     }

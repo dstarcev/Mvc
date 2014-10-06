@@ -8,10 +8,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 {
     public class EmptyModelMetadataProvider : AssociatedMetadataProvider<ModelMetadata>
     {
-        public EmptyModelMetadataProvider(IBinderMarkerProvider binderMarkerProvider) : base(binderMarkerProvider)
-        {
-        }
-
         protected override ModelMetadata CreateMetadataPrototype(IEnumerable<Attribute> attributes,
                                                                  Type containerType,
                                                                  Type modelType,

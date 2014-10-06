@@ -22,7 +22,8 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         
         public override Task<bool> BindAsync(ModelBindingContext bindingContext)
         {
-            if (_valueAccessorLookup.TryGetValue(bindingContext.ModelType, out var valueAccessor))
+            Func<ActionContext, object> valueAccessor;
+            if (_valueAccessorLookup.TryGetValue(bindingContext.ModelType, out valueAccessor))
             {
                 bindingContext.Model = valueAccessor(_actionContext);
                 return Task.FromResult<bool>(true);
