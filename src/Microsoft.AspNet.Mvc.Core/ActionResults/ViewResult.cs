@@ -24,7 +24,7 @@ namespace Microsoft.AspNet.Mvc
             var viewName = ViewName ?? context.ActionDescriptor.Name;
             var view = FindView(viewEngine, context, viewName);
 
-            ViewExecuter.ExecuteView(view, context, ViewData);
+            await ViewExecuter.ExecuteView(view, context, ViewData);
         }
 
         protected static IView FindView(IViewEngine viewEngine, ActionContext context, string viewName)

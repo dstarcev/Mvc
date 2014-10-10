@@ -45,6 +45,7 @@ namespace Microsoft.AspNet.Mvc.ApplicationModel
                 AttributeRouteModel = new AttributeRouteModel(other.AttributeRouteModel);
             }
         }
+
         public List<IActionConstraintMetadata> ActionConstraints { get; private set; }
 
         public MethodInfo ActionMethod { get; private set; }

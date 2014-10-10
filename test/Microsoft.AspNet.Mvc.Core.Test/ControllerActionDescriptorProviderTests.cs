@@ -1179,7 +1179,7 @@ namespace Microsoft.AspNet.Mvc.Test
             parameter.Attributes.Add(parameterConvention.Object);
 
             // Act
-            provider.ApplyConventions(model);
+            model.ApplyConventions(options.Options.ApplicationModelConventions);
 
             // Assert
             Assert.Equal(4, sequence);
