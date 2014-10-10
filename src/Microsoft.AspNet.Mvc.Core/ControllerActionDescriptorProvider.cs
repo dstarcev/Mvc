@@ -10,7 +10,6 @@ using Microsoft.AspNet.Mvc.Description;
 using Microsoft.AspNet.Mvc.Filters;
 using Microsoft.AspNet.Mvc.ApplicationModel;
 using Microsoft.AspNet.Mvc.Routing;
-using Microsoft.AspNet.Routing;
 using Microsoft.Framework.OptionsModel;
 
 namespace Microsoft.AspNet.Mvc
@@ -18,7 +17,7 @@ namespace Microsoft.AspNet.Mvc
     public class ControllerActionDescriptorProvider : IActionDescriptorProvider
     {
         // This is the default order for attribute routes whose order calculated from
-        // the reflected model is null.
+        // the controller model is null.
         private const int DefaultAttributeRouteOrder = 0;
 
         private readonly IAssemblyProvider _assemblyProvider;
