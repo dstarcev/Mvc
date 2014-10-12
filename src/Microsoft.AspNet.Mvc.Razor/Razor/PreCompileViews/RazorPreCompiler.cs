@@ -168,8 +168,8 @@ namespace Microsoft.AspNet.Mvc.Razor
                 {
                     var route = GetRoute(streamReader.ReadLine());
                     if (!string.IsNullOrEmpty(route))
-                    {
-                        return GetRoute(route);
+                     {
+                        return route;
                     }
                 }
             }
