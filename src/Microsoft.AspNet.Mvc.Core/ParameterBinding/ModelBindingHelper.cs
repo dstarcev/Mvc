@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System.Collections.Generic;
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Http;
 using Microsoft.AspNet.Mvc.ModelBinding;
@@ -37,9 +37,33 @@ namespace Microsoft.AspNet.Mvc
                 [NotNull] IModelValidatorProvider validatorProvider)
             where TModel : class
         {
+            return await TryUpdateModelAsync(
+                model,
+                prefix,
+                httpContext,
+                modelState,
+                metadataProvider,
+                modelBinder,
+                valueProvider,
+                validatorProvider,
+                includePredicate: null);
+        }
+
+        public static async Task<bool> TryUpdateModelAsync<TModel>(
+               [NotNull] TModel model,
+               [NotNull] string prefix,
+               [NotNull] HttpContext httpContext,
+               [NotNull] ModelStateDictionary modelState,
+               [NotNull] IModelMetadataProvider metadataProvider,
+               [NotNull] IModelBinder modelBinder,
+               [NotNull] IValueProvider valueProvider,
+               [NotNull] IModelValidatorProvider validatorProvider,
+               Func<ModelBindingContext, string, bool> includePredicate)
+           where TModel : class
+        {
             var modelMetadata = metadataProvider.GetMetadataForType(
-                modelAccessor: null,
-                modelType: typeof(TModel));
+               modelAccessor: null,
+               modelType: typeof(TModel));
 
             var modelBindingContext = new ModelBindingContext
             {
@@ -52,7 +76,8 @@ namespace Microsoft.AspNet.Mvc
                 ValidatorProvider = validatorProvider,
                 MetadataProvider = metadataProvider,
                 FallbackToEmptyPrefix = true,
-                HttpContext = httpContext
+                HttpContext = httpContext,
+                PropertyFilter = includePredicate
             };
 
             if (await modelBinder.BindModelAsync(modelBindingContext))

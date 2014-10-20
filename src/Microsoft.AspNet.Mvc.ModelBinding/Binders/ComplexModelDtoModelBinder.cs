@@ -23,7 +23,8 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                     {
                         ModelMetadata = propertyMetadata,
                         ModelName = ModelBindingHelper.CreatePropertyModelName(bindingContext.ModelName,
-                                                                               propertyMetadata.PropertyName)
+                                                                               propertyMetadata.PropertyName),
+                        PropertyFilter = bindingContext.PropertyFilter
                     };
 
                     // bind and propagate the values

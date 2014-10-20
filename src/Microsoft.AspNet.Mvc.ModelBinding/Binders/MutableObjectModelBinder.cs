@@ -115,7 +115,8 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             {
                 ModelMetadata = bindingContext.MetadataProvider.GetMetadataForType(() => originalDto,
                                                                                    typeof(ComplexModelDto)),
-                ModelName = bindingContext.ModelName
+                ModelName = bindingContext.ModelName,
+                PropertyFilter = bindingContext.PropertyFilter,
             };
 
             bindingContext.ModelBinder.BindModelAsync(dtoBindingContext);
@@ -167,9 +168,10 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         {
             var validationInfo = GetPropertyValidationInfo(bindingContext);
             var propertyTypeMetadata = bindingContext.MetadataProvider
-                                                       .GetMetadataForType(null, bindingContext.ModelType);
-            Predicate<string> newPropertyFilter =
-                propertyName => bindingContext.PropertyFilter(propertyName) &&
+                                                     .GetMetadataForType(null, bindingContext.ModelType);
+            Func<string, bool> newPropertyFilter =
+                propertyName => 
+                                bindingContext.PropertyFilter(bindingContext, propertyName) &&
                                 BindAttribute.IsPropertyAllowed(
                                                 propertyName,
                                                 propertyTypeMetadata.IncludedProperties,
@@ -177,10 +179,12 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             return bindingContext.ModelMetadata.Properties
                                  .Where(propertyMetadata =>
-                                    newPropertyFilter(propertyMetadata.PropertyName) &&
-                                    (validationInfo.RequiredProperties.Contains(propertyMetadata.PropertyName) ||
-                                    !validationInfo.SkipProperties.Contains(propertyMetadata.PropertyName)) &&
-                                    CanUpdateProperty(propertyMetadata));
+                                 {
+                                     return newPropertyFilter(propertyMetadata.PropertyName) &&
+                                      (validationInfo.RequiredProperties.Contains(propertyMetadata.PropertyName) ||
+                                      !validationInfo.SkipProperties.Contains(propertyMetadata.PropertyName)) &&
+                                      CanUpdateProperty(propertyMetadata);
+                                    });
         }
 
         private static object GetPropertyDefaultValue(PropertyInfo propertyInfo)
@@ -376,21 +380,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             }
 
             return addedError;
-        }
-
-        private static bool IsPropertyAllowed(string propertyName,
-                                              IReadOnlyList<string> includeProperties,
-                                              IReadOnlyList<string> excludeProperties)
-        {
-            // We allow a property to be bound if its both in the include list AND not in the exclude list.
-            // An empty exclude list implies no properties are disallowed.
-            var includeProperty = (includeProperties != null) &&
-                                  includeProperties.Contains(propertyName, StringComparer.OrdinalIgnoreCase);
-
-            var excludeProperty = (excludeProperties != null) &&
-                                  excludeProperties.Contains(propertyName, StringComparer.OrdinalIgnoreCase);
-
-            return includeProperty && !excludeProperty;
         }
 
         internal sealed class PropertyValidationInfo
