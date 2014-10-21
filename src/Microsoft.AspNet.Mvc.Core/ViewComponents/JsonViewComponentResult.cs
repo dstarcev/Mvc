@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using Microsoft.Framework.DependencyInjection;
 
 namespace Microsoft.AspNet.Mvc
 {
@@ -11,22 +10,26 @@ namespace Microsoft.AspNet.Mvc
     {
         public JsonViewComponentResult([NotNull] object data)
         {
-            Data = data;
+            Value = data;
         }
 
-        public object Data { get; private set; }
+        public object Value { get; set; }
 
         public void Execute([NotNull] ViewComponentContext context)
         {
-            var formatter = new JsonOutputFormatter();
-            formatter.WriteObject(context.Writer, Data);
+            var formatter = ResolveFormatter(context);
+            formatter.WriteObject(context.Writer, Value);
         }
 
-        #pragma warning disable 1998
-        public async Task ExecuteAsync([NotNull] ViewComponentContext context)
+        private static JsonOutputFormatter ResolveFormatter(ViewComponentContext context)
+        {
+            return context.ViewContext.HttpContext.RequestServices.GetRequiredService<JsonOutputFormatter>();
+        }
+
+        public Task ExecuteAsync([NotNull] ViewComponentContext context)
         {
             Execute(context);
+            return Task.FromResult(true);
         }
-        #pragma warning restore 1998
     }
 }

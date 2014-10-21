@@ -1,8 +1,11 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System.Security.Principal;
 using Microsoft.AspNet.Http;
+using Microsoft.AspNet.Mvc.ModelBinding;
 using Microsoft.AspNet.Mvc.Rendering;
+using Microsoft.AspNet.Routing;
 
 namespace Microsoft.AspNet.Mvc
 {
@@ -13,7 +16,31 @@ namespace Microsoft.AspNet.Mvc
 
         public HttpContext Context
         {
-            get { return ViewContext == null ? null : ViewContext.HttpContext; }
+            get { return ViewContext?.HttpContext; }
+        }
+
+        public HttpRequest Request
+        {
+            get
+            {
+                return ViewContext?.HttpContext?.Request;
+            }
+        }
+
+        public IPrincipal User
+        {
+            get
+            {
+                return Context?.User;
+            }
+        }
+
+        public RouteData RouteData
+        {
+            get
+            {
+                return ViewContext?.RouteData;
+            }
         }
 
         public dynamic ViewBag
@@ -28,6 +55,17 @@ namespace Microsoft.AspNet.Mvc
                 return _viewBag;
             }
         }
+
+        public ModelStateDictionary ModelState
+        {
+            get
+            {
+                return ViewData?.ModelState;
+            }
+        }
+
+        [Activate]
+        public IUrlHelper Url { get; set; }
 
         [Activate]
         public ViewContext ViewContext { get; set; }
@@ -71,7 +109,12 @@ namespace Microsoft.AspNet.Mvc
                 viewData.Model = model;
             }
 
-            return new ViewViewComponentResult(ViewEngine, viewName, viewData);
+            return new ViewViewComponentResult
+            {
+                ViewEngine = ViewEngine,
+                ViewName = viewName,
+                ViewData = viewData
+            };
         }
     }
 }
