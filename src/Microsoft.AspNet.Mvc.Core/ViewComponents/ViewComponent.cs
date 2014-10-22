@@ -16,7 +16,10 @@ namespace Microsoft.AspNet.Mvc
 
         public HttpContext Context
         {
-            get { return ViewContext?.HttpContext; }
+            get
+            {
+                return ViewContext?.HttpContext;
+            }
         }
 
         public HttpRequest Request
