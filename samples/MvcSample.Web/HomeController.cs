@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 using Microsoft.AspNet.Http;
 using Microsoft.AspNet.Mvc;
 using Microsoft.AspNet.Mvc.Rendering;
@@ -19,7 +20,7 @@ namespace MvcSample.Web
 
         public IActionResult NullUser()
         {
-            return View();
+          return View();
         }
 
         public ActionResult ValidationSummary()
