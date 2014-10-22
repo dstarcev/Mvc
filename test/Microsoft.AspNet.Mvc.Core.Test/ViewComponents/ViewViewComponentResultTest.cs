@@ -9,6 +9,8 @@ using Microsoft.AspNet.Mvc.ModelBinding;
 using Microsoft.AspNet.Mvc.Rendering;
 using Microsoft.AspNet.PipelineCore;
 using Microsoft.AspNet.Routing;
+using Microsoft.Framework.DependencyInjection;
+using Microsoft.Framework.DependencyInjection.Fallback;
 using Moq;
 using Xunit;
 
@@ -146,6 +148,40 @@ namespace Microsoft.AspNet.Mvc
         }
 
         [Fact]
+        public async Task ExecuteAsync_ResolvesViewEngineFromServiceProvider_IfNoViewEngineIsExplicitlyProvided()
+        {
+            // Arrange
+            var view = Mock.Of<IView>();
+
+            var viewEngine = new Mock<ICompositeViewEngine>(MockBehavior.Strict);
+            viewEngine.Setup(e => e.FindPartialView(It.IsAny<ActionContext>(), It.IsAny<string>()))
+                      .Returns(ViewEngineResult.Found("some-view", view))
+                      .Verifiable();
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider.Setup(p => p.GetService(typeof(ICompositeViewEngine)))
+                .Returns(viewEngine.Object);
+
+            var viewData = new ViewDataDictionary(new EmptyModelMetadataProvider());
+
+            var result = new ViewViewComponentResult
+            {
+                ViewName = "some-view",
+                ViewData = viewData
+            };
+
+            var viewComponentContext = GetViewComponentContext(view, viewData);
+            viewComponentContext.ViewContext.HttpContext.RequestServices = serviceProvider.Object;
+
+            // Act
+            await result.ExecuteAsync(viewComponentContext);
+
+            // Assert
+            viewEngine.Verify();
+            serviceProvider.Verify();
+        }
+
+        [Fact]
         public async Task ExecuteAsync_ThrowsIfPartialViewCannotBeFound()
         {
             // Arrange
@@ -174,7 +210,35 @@ namespace Microsoft.AspNet.Mvc
 
             // Act and Assert
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-                        async () => await result.ExecuteAsync(viewComponentContext));
+                        () => result.ExecuteAsync(viewComponentContext));
+            Assert.Equal(expected, ex.Message);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_Throws_IfNoViewEngineCanBeResolved()
+        {
+            // Arrange
+            var expected = "TODO: No service for type 'Microsoft.AspNet.Mvc.Rendering.ICompositeViewEngine'" +
+                " has been registered.";
+
+            var view = Mock.Of<IView>();
+
+            var serviceProvider = new ServiceCollection().BuildServiceProvider();
+
+            var viewData = new ViewDataDictionary(new EmptyModelMetadataProvider());
+
+            var result = new ViewViewComponentResult
+            {
+                ViewName = "some-view",
+                ViewData = viewData
+            };
+
+            var viewComponentContext = GetViewComponentContext(view, viewData);
+            viewComponentContext.ViewContext.HttpContext.RequestServices = serviceProvider;
+
+            // Act and Assert
+            var ex = await Assert.ThrowsAsync<Exception>(
+                        () => result.ExecuteAsync(viewComponentContext));
             Assert.Equal(expected, ex.Message);
         }
 
