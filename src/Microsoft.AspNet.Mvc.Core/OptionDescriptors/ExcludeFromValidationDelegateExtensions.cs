@@ -50,7 +50,7 @@ namespace Microsoft.AspNet.Mvc
                 return true;
             }
 
-            return CheckIfTypeNameMatches(t.BaseType, typeFullName);
+            return CheckIfTypeNameMatches(t.BaseType(), typeFullName);
         }
     }
 }
