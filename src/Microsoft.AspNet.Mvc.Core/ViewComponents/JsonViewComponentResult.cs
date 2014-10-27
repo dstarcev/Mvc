@@ -3,6 +3,7 @@
 
 using System.Threading.Tasks;
 using Microsoft.Framework.DependencyInjection;
+using System.Linq;
 
 namespace Microsoft.AspNet.Mvc
 {
@@ -13,17 +14,33 @@ namespace Microsoft.AspNet.Mvc
             Value = data;
         }
 
-        public object Value { get; set; }
+        public JsonViewComponentResult([NotNull] object data, JsonOutputFormatter formatter)
+        {
+            Value = data;
+            Formatter = formatter;
+        }
+
+        public object Value { get; private set; }
+
+        public JsonOutputFormatter Formatter { get; private set; }
 
         public void Execute([NotNull] ViewComponentContext context)
         {
-            var formatter = ResolveFormatter(context);
+            var formatter = Formatter ?? ResolveFormatter(context);
             formatter.WriteObject(context.Writer, Value);
         }
 
         private static JsonOutputFormatter ResolveFormatter(ViewComponentContext context)
         {
-            return context.ViewContext.HttpContext.RequestServices.GetRequiredService<JsonOutputFormatter>();
+            var services = context.ViewContext.HttpContext.RequestServices;
+
+            var provider = services.GetRequiredService<IOutputFormattersProvider>();
+
+            var formatter = (JsonOutputFormatter)provider
+                .OutputFormatters
+                .FirstOrDefault(f => f is JsonOutputFormatter);
+
+            return formatter ?? services.GetRequiredService<JsonOutputFormatter>();
         }
 
         public Task ExecuteAsync([NotNull] ViewComponentContext context)
