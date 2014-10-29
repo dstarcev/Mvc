@@ -15,9 +15,14 @@ namespace Microsoft.AspNet.Mvc.Razor
         /// </summary>
         /// <param name="fileInfo">The <see cref="IFileInfo"/> for the Razor file that was compiled.</param>
         /// <param name="compilationContent">The generated C# content to be compiled.</param>
+        /// <param name="mainClassPrefix">Prefix that is used to identify the primary type that is compiled.</param>
         /// <returns>
         /// A <see cref="CompilationResult"/> representing the result of compilation.
         /// </returns>
-        CompilationResult Compile(IFileInfo fileInfo, string compilationContent);
+        /// <remarks>
+        /// The <paramref name="mainClassPrefix"/> maps to <see cref="IMvcRazorHost.MainClassNamePrefix"/> and is used
+        /// to uniquely identify a view type when more than one public type is produced as a result of compilation.
+        /// </remarks>
+        CompilationResult Compile(IFileInfo fileInfo, string compilationContent, string mainClassPrefix);
     }
 }

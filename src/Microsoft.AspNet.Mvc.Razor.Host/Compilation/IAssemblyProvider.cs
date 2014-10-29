@@ -3,11 +3,12 @@
 
 using System.Collections.Generic;
 using System.Reflection;
-using Microsoft.Framework.Runtime;
 
 namespace Microsoft.AspNet.Mvc
 {
-    [AssemblyNeutral]
+#if ASPNET50 || ASPNETCORE50
+    [Microsoft.Framework.Runtime.AssemblyNeutral]
+#endif
     public interface IAssemblyProvider
     {
         IEnumerable<Assembly> CandidateAssemblies { get; }

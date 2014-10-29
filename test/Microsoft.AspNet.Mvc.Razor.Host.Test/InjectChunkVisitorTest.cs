@@ -144,8 +144,10 @@ MyType1
 
         private static CodeBuilderContext CreateContext()
         {
+            var fileSystem = new TestFileSystem();
+            var host = new MvcRazorHost(fileSystem, new NullCompilationService(), CompilerCache.Create(fileSystem));
             return new CodeBuilderContext(
-                new CodeGeneratorContext(new MvcRazorHost(new TestFileSystem()),
+                new CodeGeneratorContext(host,
                                          "MyClass",
                                          "MyNamespace",
                                          string.Empty,

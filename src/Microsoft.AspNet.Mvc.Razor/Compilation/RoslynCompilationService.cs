@@ -32,29 +32,24 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
 
         private readonly Lazy<List<MetadataReference>> _applicationReferences;
 
-        private readonly string _classPrefix;
-
         /// <summary>
         /// Initalizes a new instance of the <see cref="RoslynCompilationService"/> class.
         /// </summary>
         /// <param name="environment">The environment for the executing application.</param>
         /// <param name="loaderEngine">The loader used to load compiled assemblies.</param>
         /// <param name="libraryManager">The library manager that provides export and reference information.</param>
-        /// <param name="host">The <see cref="IMvcRazorHost"/> that was used to generate the code.</param>
         public RoslynCompilationService(IApplicationEnvironment environment,
                                         IAssemblyLoadContextAccessor loaderAccessor,
-                                        ILibraryManager libraryManager,
-                                        IMvcRazorHost host)
+                                        ILibraryManager libraryManager)
         {
             _environment = environment;
             _loader = loaderAccessor.GetLoadContext(typeof(RoslynCompilationService).GetTypeInfo().Assembly);
             _libraryManager = libraryManager;
             _applicationReferences = new Lazy<List<MetadataReference>>(GetApplicationReferences);
-            _classPrefix = host.MainClassNamePrefix;
         }
 
         /// <inheritdoc />
-        public CompilationResult Compile(IFileInfo fileInfo, string compilationContent)
+        public CompilationResult Compile(IFileInfo fileInfo, string compilationContent, string mainClassPrefix)
         {
             var syntaxTrees = new[] { SyntaxTreeGenerator.Generate(compilationContent, fileInfo.PhysicalPath) };
 
@@ -109,7 +104,7 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
 
                     var type = assembly.GetExportedTypes()
                                        .First(t => t.Name.
-                                          StartsWith(_classPrefix, StringComparison.Ordinal));
+                                          StartsWith(mainClassPrefix, StringComparison.Ordinal));
 
                     return UncachedCompilationResult.Successful(type);
                 }

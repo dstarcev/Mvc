@@ -15,8 +15,9 @@ namespace Microsoft.AspNet.Mvc.Razor
         [Fact]
         public void MvcRazorHost_EnablesInstrumentationByDefault()
         {
-            // Arrange
-            var host = new MvcRazorHost(new TestFileSystem());
+            // Arrang
+            var fileSystem = new TestFileSystem();
+            var host = new MvcRazorHost(fileSystem, new NullCompilationService(), CompilerCache.Create(fileSystem));
 
             // Act
             var instrumented = host.EnableInstrumentation;
@@ -29,7 +30,8 @@ namespace Microsoft.AspNet.Mvc.Razor
         public void MvcRazorHost_GeneratesTagHelperModelExpressionCode_DesignTime()
         {
             // Arrange
-            var host = new MvcRazorHost(new TestFileSystem())
+            var fileSystem = new TestFileSystem();
+            var host = new MvcRazorHost(fileSystem, new NullCompilationService(), CompilerCache.Create(fileSystem))
             {
                 DesignTimeMode = true
             };
@@ -66,7 +68,8 @@ namespace Microsoft.AspNet.Mvc.Razor
         public void MvcRazorHost_ParsesAndGeneratesCodeForBasicScenarios(string scenarioName)
         {
             // Arrange
-            var host = new MvcRazorHost(new TestFileSystem());
+            var fileSystem = new TestFileSystem();
+            var host = new MvcRazorHost(fileSystem, new NullCompilationService(), CompilerCache.Create(fileSystem));
 
             // Act and Assert
             RunRuntimeTest(host, scenarioName);
@@ -76,7 +79,8 @@ namespace Microsoft.AspNet.Mvc.Razor
         public void InjectVisitor_GeneratesCorrectLineMappings()
         {
             // Arrange
-            var host = new MvcRazorHost(new TestFileSystem())
+            var fileSystem = new TestFileSystem();
+            var host = new MvcRazorHost(fileSystem, new NullCompilationService(), CompilerCache.Create(fileSystem))
             {
                 DesignTimeMode = true
             };
@@ -95,7 +99,8 @@ namespace Microsoft.AspNet.Mvc.Razor
         public void InjectVisitorWithModel_GeneratesCorrectLineMappings()
         {
             // Arrange
-            var host = new MvcRazorHost(new TestFileSystem())
+            var fileSystem = new TestFileSystem();
+            var host = new MvcRazorHost(fileSystem, new NullCompilationService(), CompilerCache.Create(fileSystem))
             {
                 DesignTimeMode = true
             };
@@ -115,7 +120,8 @@ namespace Microsoft.AspNet.Mvc.Razor
         public void ModelVisitor_GeneratesCorrectLineMappings()
         {
             // Arrange
-            var host = new MvcRazorHost(new TestFileSystem())
+            var fileSystem = new TestFileSystem();
+            var host = new MvcRazorHost(fileSystem, new NullCompilationService(), CompilerCache.Create(fileSystem))
             {
                 DesignTimeMode = true
             };

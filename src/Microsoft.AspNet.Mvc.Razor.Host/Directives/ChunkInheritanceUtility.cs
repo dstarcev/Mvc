@@ -17,8 +17,14 @@ namespace Microsoft.AspNet.Mvc.Razor.Directives
     /// </summary>
     public class ChunkInheritanceUtility
     {
-        private readonly Dictionary<string, CodeTree> _parsedCodeTrees;
+        /// <summary>
+        /// The key used for caching <see cref="CodeTree"/> instances using <see cref="ICompilerCache.GetOrAddMetadata(
+        /// RelativeFileInfo, IFileSystem, Func{RelativeFileInfo, CompilationResult}, object, Func{object})"/>
+        /// </summary>
+        public static readonly object CodeTreeMetadataCacheKey = new object();
         private readonly MvcRazorHost _razorHost;
+        private readonly ICompilationService _compilationService;
+        private readonly ICompilerCache _compilerCache;
         private readonly IFileSystem _fileSystem;
         private readonly IEnumerable<Chunk> _defaultInheritedChunks;
 
@@ -26,16 +32,21 @@ namespace Microsoft.AspNet.Mvc.Razor.Directives
         /// Initializes a new instance of <see cref="ChunkInheritanceUtility"/>.
         /// </summary>
         /// <param name="razorHost">The <see cref="MvcRazorHost"/> used to parse _ViewStart pages.</param>
+        /// <param name="compilationService">The <see cref="ICompilationService"/> used to compile Razor files.</param>
+        /// <param name="compilerCache">The <see cref="ICompilerCache"/> used to cache compilation results.</param>
         /// <param name="fileSystem">The filesystem that represents the application.</param>
         /// <param name="defaultInheritedChunks">Sequence of <see cref="Chunk"/>s inherited by default.</param>
         public ChunkInheritanceUtility([NotNull] MvcRazorHost razorHost,
+                                       [NotNull] ICompilationService compilationService,
+                                       [NotNull] ICompilerCache compilerCache,
                                        [NotNull] IFileSystem fileSystem,
                                        [NotNull] IEnumerable<Chunk> defaultInheritedChunks)
         {
             _razorHost = razorHost;
+            _compilationService = compilationService;
+            _compilerCache = compilerCache;
             _fileSystem = fileSystem;
             _defaultInheritedChunks = defaultInheritedChunks;
-            _parsedCodeTrees = new Dictionary<string, CodeTree>(StringComparer.Ordinal);
         }
 
         /// <summary>
@@ -51,18 +62,20 @@ namespace Microsoft.AspNet.Mvc.Razor.Directives
             var templateEngine = new RazorTemplateEngine(_razorHost);
             foreach (var viewStart in ViewStartUtility.GetViewStartLocations(_fileSystem, pagePath))
             {
-                CodeTree codeTree;
-                IFileInfo fileInfo;
-
-                if (_parsedCodeTrees.TryGetValue(viewStart, out codeTree))
+                IFileInfo viewStartFileInfo;
+                if (_fileSystem.TryGetFileInfo(viewStart, out viewStartFileInfo))
                 {
-                    inheritedChunks.AddRange(codeTree.Chunks);
-                }
-                else if (_fileSystem.TryGetFileInfo(viewStart, out fileInfo))
-                {
-                    codeTree = ParseViewFile(templateEngine, fileInfo);
-                    _parsedCodeTrees.Add(viewStart, codeTree);
-                    inheritedChunks.AddRange(codeTree.Chunks);
+                    var relativeFileInfo = new RelativeFileInfo(viewStartFileInfo, viewStart);
+                    var result = _compilerCache.GetOrAddMetadata(
+                                                        relativeFileInfo,
+                                                        file => RazorCompilation.Compile(_razorHost, _compilationService, file),
+                                                        CodeTreeMetadataCacheKey,
+                                                        () => ParseViewFile(templateEngine, viewStartFileInfo));
+                    var codeTree = result as CodeTree;
+                    if  (codeTree != null)
+                    {
+                        inheritedChunks.AddRange(codeTree.Chunks);
+                    }
                 }
             }
 
@@ -119,8 +132,7 @@ namespace Microsoft.AspNet.Mvc.Razor.Directives
             };
         }
 
-        // TODO: This needs to be cached (#1016)
-        private static CodeTree ParseViewFile(RazorTemplateEngine engine,
+        private static CodeTree ParseViewFile(RazorTemplateEngine engine, 
                                               IFileInfo fileInfo)
         {
             using (var stream = fileInfo.CreateReadStream())

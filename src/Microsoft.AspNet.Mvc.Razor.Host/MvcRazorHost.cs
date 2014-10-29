@@ -32,6 +32,8 @@ namespace Microsoft.AspNet.Mvc.Razor
         };
 
         private readonly IFileSystem _fileSystem;
+        private readonly ICompilerCache _compilerCache;
+        private readonly ICompilationService _compilationService;
 
         // CodeGenerationContext.DefaultBaseClass is set to MyBaseType<dynamic>. 
         // This field holds the type name without the generic decoration (MyBaseType)
@@ -48,15 +50,33 @@ namespace Microsoft.AspNet.Mvc.Razor
             this(new PhysicalFileSystem(root))
         {
         }
+
+        private MvcRazorHost(IFileSystem fileSystem)
+            : this(fileSystem, new NullCompilationService(), CompilerCache.Create(fileSystem))
+        {
+        }
 #endif
         /// <summary>
         /// Initializes a new instance of <see cref="MvcRazorHost"/> using the specified <paramref name="fileSystem"/>.
         /// </summary>
-        /// <param name="fileSystem">A <see cref="IFileSystem"/> rooted at the application base path.</param>
-        public MvcRazorHost(IFileSystem fileSystem)
+        /// <param name="fileSystem">A <see cref="ICachedFileSystem"/> rooted at the application base path.</param>
+        /// <param name="compilationService">The <see cref="ICompilationService"/> used to compile Razor files.</param>
+        /// <param name="compilerCache">The <see cref="ICompilerCache"/> used to cache results of compilation.</param>
+        public MvcRazorHost(ICachedFileSystem fileSystem,
+                            ICompilationService compilationService,
+                            ICompilerCache compilerCache)
+            : this((IFileSystem)fileSystem, compilationService, compilerCache)
+        {
+        }
+
+        private MvcRazorHost(IFileSystem fileSystem,
+                             ICompilationService compilationService,
+                             ICompilerCache compilerCache)
             : base(new CSharpRazorCodeLanguage())
         {
             _fileSystem = fileSystem;
+            _compilationService = compilationService;
+            _compilerCache = compilerCache;
             _baseType = BaseType;
 
             TagHelperDescriptorResolver = new TagHelperDescriptorResolver();
@@ -157,14 +177,19 @@ namespace Microsoft.AspNet.Mvc.Razor
             get { return "CreateModelExpression"; }
         }
 
-        private ChunkInheritanceUtility ChunkInheritanceUtility
+        // Internal for unit testing
+        internal ChunkInheritanceUtility ChunkInheritanceUtility
         {
             get
             {
                 if (_chunkInheritanceUtility == null)
                 {
                     // This needs to be lazily evaluated to support DefaultInheritedChunks being virtual.
-                    _chunkInheritanceUtility = new ChunkInheritanceUtility(this, _fileSystem, DefaultInheritedChunks);
+                    _chunkInheritanceUtility = new ChunkInheritanceUtility(this,
+                                                                           _compilationService,
+                                                                           _compilerCache,
+                                                                           _fileSystem,
+                                                                           DefaultInheritedChunks);
                 }
 
                 return _chunkInheritanceUtility;

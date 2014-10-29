@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using Microsoft.AspNet.FileSystems;
 using Microsoft.AspNet.Http;
 using Microsoft.AspNet.PageExecutionInstrumentation;
 using Microsoft.Framework.DependencyInjection;
@@ -16,35 +17,20 @@ namespace Microsoft.AspNet.Mvc.Razor
     {
         private readonly ITypeActivator _activator;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IFileInfoCache _fileInfoCache;
+        private readonly ICachedFileSystem _cachedFileSystem;
         private readonly ICompilerCache _compilerCache;
-        private IRazorCompilationService _razorcompilationService;
+        private IMvcRazorHost _razorHost;
+        private ICompilationService _compilationService;
 
         public VirtualPathRazorPageFactory(ITypeActivator typeActivator,
                                            IServiceProvider serviceProvider,
                                            ICompilerCache compilerCache,
-                                           IFileInfoCache fileInfoCache)
+                                           ICachedFileSystem cachedFileSystem)
         {
             _activator = typeActivator;
             _serviceProvider = serviceProvider;
             _compilerCache = compilerCache;
-            _fileInfoCache = fileInfoCache;
-        }
-
-        private IRazorCompilationService RazorCompilationService
-        {
-            get
-            {
-                if (_razorcompilationService == null)
-                {
-                    // it is ok to use the cached service provider because both this, and the
-                    // resolved service are in a lifetime of Scoped.
-                    // We don't want to get it upgront because it will force Roslyn to load.
-                    _razorcompilationService = _serviceProvider.GetRequiredService<IRazorCompilationService>();
-                }
-
-                return _razorcompilationService;
-            }
+            _cachedFileSystem = cachedFileSystem;
         }
 
         /// <inheritdoc />
@@ -56,19 +42,15 @@ namespace Microsoft.AspNet.Mvc.Razor
                 relativePath = relativePath.Substring(1);
             }
 
-            var fileInfo = _fileInfoCache.GetFileInfo(relativePath);
-
-            if (fileInfo != null)
+            IFileInfo fileInfo;
+            if (_cachedFileSystem.TryGetFileInfo(relativePath, out fileInfo))
             {
-                var relativeFileInfo = new RelativeFileInfo()
-                {
-                    FileInfo = fileInfo,
-                    RelativePath = relativePath,
-                };
+                EnsureCompilationServices();
+                var relativeFileInfo = new RelativeFileInfo(fileInfo, relativePath);
 
                 var result = _compilerCache.GetOrAdd(
                     relativeFileInfo,
-                    () => RazorCompilationService.Compile(relativeFileInfo));
+                    (f) => RazorCompilation.Compile(_razorHost, _compilationService, f));
 
                 var page = (IRazorPage)_activator.CreateInstance(_serviceProvider, result.CompiledType);
                 page.Path = relativePath;
@@ -78,6 +60,19 @@ namespace Microsoft.AspNet.Mvc.Razor
 
             return null;
         }
+
+        private void EnsureCompilationServices()
+        {
+            if (_compilationService == null)
+            {
+                // it is ok to use the cached service provider because both this, and the
+                // resolved services are in a lifetime of Scoped.
+                // We don't want to get it upfront because it will force Roslyn to load.
+                _compilationService = _serviceProvider.GetRequiredService<ICompilationService>();
+                _razorHost = _serviceProvider.GetRequiredService<IMvcRazorHost>();
+            }
+        }
+
 
         private static bool IsInstrumentationEnabled(HttpContext context)
         {

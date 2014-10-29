@@ -20,7 +20,7 @@ namespace Microsoft.AspNet.Mvc.Razor
         private readonly IMvcRazorHost _host;
 
         public RazorPreCompiler([NotNull] IServiceProvider designTimeServiceProvider) :
-            this(designTimeServiceProvider, 
+            this(designTimeServiceProvider,
                  designTimeServiceProvider.GetRequiredService<IMvcRazorHost>(),
                  designTimeServiceProvider.GetRequiredService<IOptions<RazorViewEngineOptions>>())
         {
@@ -99,12 +99,8 @@ namespace Microsoft.AspNet.Mvc.Razor
                 else if (Path.GetExtension(fileInfo.Name)
                          .Equals(FileExtension, StringComparison.OrdinalIgnoreCase))
                 {
-                    var info = new RelativeFileInfo()
-                    {
-                        FileInfo = fileInfo,
-                        RelativePath = Path.Combine(currentPath, fileInfo.Name),
-                    };
-
+                    var relativePath = Path.Combine(currentPath, fileInfo.Name);
+                    var info = new RelativeFileInfo(fileInfo, relativePath);
                     yield return info;
                 }
             }
