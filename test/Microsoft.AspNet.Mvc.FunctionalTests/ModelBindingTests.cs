@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.TestHost;
@@ -49,6 +50,32 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         }
 
         [Fact]
+        public async Task TryUpdateModel_WithAPropertyFromBody()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+
+            // the name would be of customer.Department.Name
+            // and not for the top level customer object.
+            var input = "{\"Name\":\"RandomDepartment\"}";
+            var content = new StringContent(input, Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await client.PostAsync("http://localhost/Home/GetCustomer?Id=1234", content);
+           
+            //Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var customer = JsonConvert.DeserializeObject<Customer>(
+                        await response.Content.ReadAsStringAsync());
+            Assert.NotNull(customer.Department);
+            Assert.Equal("RandomDepartment", customer.Department.Name);
+            Assert.Equal(1234, customer.Id);
+            Assert.Equal(25, customer.Age);
+            Assert.Equal("dummy", customer.Name);
+        }
+
+        [Fact]
         public async Task MultipleParametersMarkedWithFromBody_Throws()
         {
             // Arrange
@@ -57,9 +84,24 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-               client.GetAsync("http://localhost/MultipleParametersFromBody/MultipleParametersFromBodyThrows"));
+               client.GetAsync("http://localhost/MultipleFromBody/FromBodyParametersThrows"));
 
-            Assert.Equal("More than one parameter is bound to the HTTP request's content.",
+            Assert.Equal("More than one parameter and/or property is bound to the HTTP request's content.",
+                         ex.Message);
+        }
+
+        [Fact]
+        public async Task MultipleParameterAndPropertiesMarkedWithFromBody_Throws()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+               client.GetAsync("http://localhost/MultipleFromBody/FromBodyParameterAndPropertyThrows"));
+
+            Assert.Equal("More than one parameter and/or property is bound to the HTTP request's content.",
                          ex.Message);
         }
 

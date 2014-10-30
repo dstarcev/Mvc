@@ -46,6 +46,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 ModelBinder = bindingContext.ModelBinder;
                 ValidatorProvider = bindingContext.ValidatorProvider;
                 HttpContext = bindingContext.HttpContext;
+                IsFormatterBinderMetadataFound = bindingContext.IsFormatterBinderMetadataFound;
             }
         }
 
@@ -122,6 +123,12 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 return ModelMetadata.ModelType;
             }
         }
+
+        /// <summary>
+        /// Gets or sets a value that indicates whether there has been an <see cref="IFormatterBinderMetadata"/> found
+        /// while trying to bind the model.
+        /// </summary>
+        public bool IsFormatterBinderMetadataFound { get; set; }
 
         /// <summary>
         /// Gets or sets a value that indicates whether the binder should use an empty prefix to look up

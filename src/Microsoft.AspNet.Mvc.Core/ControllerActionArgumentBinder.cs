@@ -56,7 +56,7 @@ namespace Microsoft.AspNet.Mvc
                                 modelMetadata => modelMetadata.BinderMetadata is IFormatterBinderMetadata);
             if (bodyBoundParameterCount > 1)
             {
-                throw new InvalidOperationException(Resources.MultipleBodyParametersAreNotAllowed);
+                throw new InvalidOperationException(Resources.MultipleBodyParametersOrPropertiesAreNotAllowed);
             }
 
             var actionArguments = new Dictionary<string, object>(StringComparer.Ordinal);

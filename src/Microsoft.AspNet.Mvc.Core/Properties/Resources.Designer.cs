@@ -11,19 +11,19 @@ namespace Microsoft.AspNet.Mvc.Core
             = new ResourceManager("Microsoft.AspNet.Mvc.Core.Resources", typeof(Resources).GetTypeInfo().Assembly);
 
         /// <summary>
-        /// More than one parameter is bound to the HTTP request's content.
+        /// More than one parameter and/or property is bound to the HTTP request's content.
         /// </summary>
-        internal static string MultipleBodyParametersAreNotAllowed
+        internal static string MultipleBodyParametersOrPropertiesAreNotAllowed
         {
-            get { return GetString("MultipleBodyParametersAreNotAllowed"); }
+            get { return GetString("MultipleBodyParametersOrPropertiesAreNotAllowed"); }
         }
 
         /// <summary>
-        /// More than one parameter is bound to the HTTP request's content.
+        /// More than one parameter and/or property is bound to the HTTP request's content.
         /// </summary>
-        internal static string FormatMultipleBodyParametersAreNotAllowed()
+        internal static string FormatMultipleBodyParametersOrPropertiesAreNotAllowed()
         {
-            return GetString("MultipleBodyParametersAreNotAllowed");
+            return GetString("MultipleBodyParametersOrPropertiesAreNotAllowed");
         }
 
         /// <summary>

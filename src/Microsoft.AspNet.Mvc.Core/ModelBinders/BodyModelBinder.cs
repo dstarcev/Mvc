@@ -34,6 +34,15 @@ namespace Microsoft.AspNet.Mvc
             ModelBindingContext bindingContext, 
             IFormatterBinderMetadata metadata)
         {
+            if(bindingContext.IsFormatterBinderMetadataFound)
+            {
+                throw new InvalidOperationException(Resources.MultipleBodyParametersOrPropertiesAreNotAllowed);
+            }
+            else
+            {
+                bindingContext.IsFormatterBinderMetadataFound = true;
+            }
+
             var formatterContext = new InputFormatterContext(_actionContext, bindingContext.ModelType);
             var formatter = _formatterSelector.SelectFormatter(formatterContext);
 

@@ -137,6 +137,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 ModelBinder = oldBindingContext.ModelBinder,
                 HttpContext = oldBindingContext.HttpContext,
                 PropertyFilter = oldBindingContext.PropertyFilter,
+                IsFormatterBinderMetadataFound = oldBindingContext.IsFormatterBinderMetadataFound,
             };
 
             // validation is expensive to create, so copy it over if we can
