@@ -45,7 +45,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 }
             };
 
-            bindingContext.ModelMetadata.ModelName = isPrefixProvided ? "prefix" : null;
+            bindingContext.ModelBindingContext.ModelMetadata.ModelName = isPrefixProvided ? "prefix" : null;
             var mutableBinder = new MutableObjectModelBinder();
 
             // Act
@@ -80,7 +80,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 }
             };
 
-            bindingContext.ModelName = emptyModelName ? string.Empty : "dummyModelName";
+            bindingContext.ModelBindingContext.ModelName = emptyModelName ? string.Empty : "dummyModelName";
             var mutableBinder = new MutableObjectModelBinder();
 
             // Act
@@ -88,6 +88,52 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             // Assert
             Assert.Equal(emptyModelName, retModel);
+        }
+
+        [Fact]
+        public async Task CanCreateModel_ReturnsFalse_ForNonTopLevelModel_IfModelIsMarkedWithBinderMetadata()
+        {
+            var bindingContext = new MutableObjectBinderContext
+            {
+                ModelBindingContext = new ModelBindingContext
+                {
+                    // Get the property metadata so that it is not a top level object.
+                    ModelMetadata = GetMetadataForType(typeof(Document))
+                                        .Properties
+                                        .First(metadata => metadata.PropertyName == nameof(Document.SubDocument)),
+                    ValidatorProvider = Mock.Of<IModelValidatorProvider>(),
+                }
+            };
+
+            var mutableBinder = new MutableObjectModelBinder();
+
+            // Act
+            var canCreate = await mutableBinder.CanCreateModel(bindingContext);
+
+            // Assert
+            Assert.False(canCreate);
+        }
+
+        [Fact]
+        public async Task CanCreateModel_ReturnsTrue_ForTopLevelModel_IfModelIsMarkedWithBinderMetadata()
+        {
+            var bindingContext = new MutableObjectBinderContext
+            {
+                ModelBindingContext = new ModelBindingContext
+                {
+                    // Here the metadata represents a top level object.
+                    ModelMetadata = GetMetadataForType(typeof(Document)),
+                    ValidatorProvider = Mock.Of<IModelValidatorProvider>(),
+                }
+            };
+
+            var mutableBinder = new MutableObjectModelBinder();
+
+            // Act
+            var canCreate = await mutableBinder.CanCreateModel(bindingContext);
+
+            // Assert
+            Assert.True(canCreate);
         }
 
         [Fact]
@@ -245,28 +291,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             // Assert
             Assert.Equal(valueProviderProvidesValue, retModel);
-        }
-
-        public class NestedClass
-        {
-            public string UnmarkedProperty { get; set; }
-
-            [ValueBinderMetadata]
-            public string MarkedValueProperty { get; set; }
-
-            [ValueBinderMetadata]
-            public NestedClass NestedProperty { get; set; }
-        }
-
-        // Top level object gets created, will fall into infinite recursion if 
-        // there is no model binder which understands NonValueBinderMetadata
-        public class NestedMetadataPocoClass
-        {
-            [NonValueBinderMetadata]
-            public string MarkedNonValueProperty { get; set; }
-
-            [NonValueBinderMetadata]
-            public NestedClass NestedProperty { get; set; }
         }
 
         [Fact]
@@ -1317,6 +1341,15 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             [NonValueBinderMetadata]
             public string MarkedWithABinderMetadata { get; set; }
+        }
+
+        public class Document
+        {
+            [NonValueBinderMetadata]
+            public string Version { get; set; }
+
+            [NonValueBinderMetadata]
+            public Document SubDocument { get; set; }
         }
 
         private class NonValueBinderMetadataAttribute : Attribute, IBinderMetadata

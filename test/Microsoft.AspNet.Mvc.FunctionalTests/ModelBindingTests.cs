@@ -64,6 +64,24 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         }
 
         [Fact]
+        public async Task NonExistingModelBinder_ForABinderMetadata_DoesNotRecurseInfinitely()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+
+            // Act & Assert
+            var response = await client.GetStringAsync("http://localhost/WithMetadata/EchoDocument");
+
+            var document = JsonConvert.DeserializeObject<Document>
+                          (response);
+
+            Assert.NotNull(document);
+            Assert.Null(document.Version);
+            Assert.Null(document.SubDocument);
+        }
+
+        [Fact]
         public async Task ParametersWithNoValueProviderMetadataUseTheAvailableValueProviders()
         {
             // Arrange

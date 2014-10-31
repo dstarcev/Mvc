@@ -52,7 +52,19 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             // The fact that this has reached here, 
             // it is a complex object which was not directly bound by any previous model binders. 
-            // Create the object if : 
+            // Check if this was supposed to be handled by a non value provider based binder.
+            // if it was then it should be not be bound using mutable object binder.
+            // This check would prevent it from recursing in if a model contains a property of its own type.
+            // We skip this check if it is a top level object because we want to always evaluate 
+            // the creation of top level object (this is also required for ModelBinderAttribute to work.)
+            if (!topLevelObject &&
+                bindingContext.ModelMetadata.BinderMetadata is IBinderMetadata &&
+                !(bindingContext.ModelMetadata.BinderMetadata is IValueProviderMetadata))
+            {
+                return false;
+            }
+
+            // Create the object if :
             // 1. It is a top level model with an explicit user supplied prefix. 
             //    In this case since it will never fallback to empty prefix, we need to create the model here.
             if (topLevelObject && isThereAnExplicitAlias)
@@ -95,7 +107,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             // QueryValueProvider does not, we do not want to create Person.
             context.PropertyMetadata = GetMetadataForProperties(context.ModelBindingContext).ToArray();
 
-            bool isAnyPropertyEnabledForValueProviderBasedBinding = false;
+            var isAnyPropertyEnabledForValueProviderBasedBinding = false;
             foreach (var propertyMetadata in context.PropertyMetadata)
             {
                 // This check will skip properties which are marked explicitly using a non value binder.
@@ -116,6 +128,8 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             {
                 // Either there are no properties or all the properties are marked as
                 // a non value provider based marker.
+                // This would be the case when the model has all its properties annotated with
+                // a IBinderMetadata ( a metadata POCO class ). We want to be able to create such a model.
                 return true;
             }
 
@@ -130,7 +144,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             {
                 // if there is a binder metadata and since the property can be bound using a value provider.
                 var metadataAwareValueProvider = bindingContext.OriginalValueProvider as IMetadataAwareValueProvider;
-                if(metadataAwareValueProvider != null)
+                if (metadataAwareValueProvider != null)
                 {
                     valueProvider = metadataAwareValueProvider.Filter(valueProviderMetadata);
                 }
