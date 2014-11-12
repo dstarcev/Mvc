@@ -805,7 +805,7 @@ namespace Microsoft.AspNet.Mvc.Test
             var bindingContext = new ActionBindingContext(actionContext,
                                                           metadataProvider,
                                                           binder.Object,
-                                                          Mock.Of<IValueProvider>(), // Notice the use of mock VP here.
+                                                          Mock.Of<IValueProvider>(), // Mock is used to ensure it uses passed in VP.
                                                           Mock.Of<IInputFormatterSelector>(),
                                                           Mock.Of<IModelValidatorProvider>());
             var bindingContextProvider = new Mock<IActionBindingContextProvider>();
@@ -834,12 +834,10 @@ namespace Microsoft.AspNet.Mvc.Test
         {
             var modelName = "mymodel";
 
-            var includeProperties = new[] { "include1", "include2" };
             Func<ModelBindingContext, string, bool> includePredicate = 
                 (context, propertyName) => 
                                 string.Equals(propertyName, "include1", StringComparison.OrdinalIgnoreCase) || 
                                 string.Equals(propertyName, "include2", StringComparison.OrdinalIgnoreCase);
-            var excludeProperties = new[] { "exclude1", "exclude2" };
 
             var binder = new Mock<IModelBinder>();
             var valueProvider = Mock.Of<IValueProvider>();
@@ -848,15 +846,12 @@ namespace Microsoft.AspNet.Mvc.Test
                   {
                       Assert.Equal(modelName, b.ModelName);
                       Assert.Same(valueProvider, b.ValueProvider);
-                      foreach (var item in includeProperties)
-                      {
-                          Assert.True(b.PropertyFilter(b, item));
-                      }
 
-                      foreach (var item in excludeProperties)
-                      {
-                          Assert.False(b.PropertyFilter(b, item));
-                      }
+                      Assert.True(b.PropertyFilter(b, "include1"));
+                      Assert.True(b.PropertyFilter(b, "include2"));
+
+                      Assert.False(b.PropertyFilter(b, "exclude1"));
+                      Assert.False(b.PropertyFilter(b, "exclude2"));
                   })
                   .Returns(Task.FromResult(true))
                   .Verifiable();
@@ -895,11 +890,9 @@ namespace Microsoft.AspNet.Mvc.Test
         {
             var modelName = "mymodel";
 
-            var includeProperties = new[] { "include1", "include2" };
             Func<ModelBindingContext, string, bool> includePredicate =
                (context, propertyName) => string.Equals(propertyName, "include1", StringComparison.OrdinalIgnoreCase) ||
                                           string.Equals(propertyName, "include2", StringComparison.OrdinalIgnoreCase);
-            var excludeProperties = new[] { "exclude1", "exclude2" };
 
             var binder = new Mock<IModelBinder>();
             var valueProvider = Mock.Of<IValueProvider>();
@@ -908,15 +901,12 @@ namespace Microsoft.AspNet.Mvc.Test
                   {
                       Assert.Equal(modelName, b.ModelName);
                       Assert.Same(valueProvider, b.ValueProvider);
-                      foreach (var item in includeProperties)
-                      {
-                          Assert.True(b.PropertyFilter(b, item));
-                      }
 
-                      foreach (var item in excludeProperties)
-                      {
-                          Assert.False(b.PropertyFilter(b, item));
-                      }
+                      Assert.True(b.PropertyFilter(b, "include1"));
+                      Assert.True(b.PropertyFilter(b, "include2"));
+
+                      Assert.False(b.PropertyFilter(b, "exclude1"));
+                      Assert.False(b.PropertyFilter(b, "exclude2"));
                   })
                   .Returns(Task.FromResult(true))
                   .Verifiable();
@@ -926,7 +916,7 @@ namespace Microsoft.AspNet.Mvc.Test
             var bindingContext = new ActionBindingContext(actionContext,
                                                           metadataProvider,
                                                           binder.Object,
-                                                          Mock.Of<IValueProvider>(), // Notice the use of mock VP here.
+                                                          Mock.Of<IValueProvider>(), // Mock is used to ensure it uses passed in VP.
                                                           Mock.Of<IInputFormatterSelector>(),
                                                           Mock.Of<IModelValidatorProvider>());
             var bindingContextProvider = new Mock<IActionBindingContextProvider>();
@@ -955,9 +945,6 @@ namespace Microsoft.AspNet.Mvc.Test
         [InlineData("prefix")]
         public async Task TryUpdateModel_IncludeExpressionOverload_UsesIncludeProperties_IfSpecified(string prefix)
         {
-            var includeProperties = new[] { "foo", "bar" };
-            var excludeProperties = new[] { "exclude1", "exclude2" };
-
             var binder = new Mock<IModelBinder>();
             var valueProvider = Mock.Of<IValueProvider>();
             binder.Setup(b => b.BindModelAsync(It.IsAny<ModelBindingContext>()))
@@ -966,15 +953,11 @@ namespace Microsoft.AspNet.Mvc.Test
                       Assert.Equal(prefix, b.ModelName);
                       Assert.Same(valueProvider, b.ValueProvider);
 
-                      foreach (var item in includeProperties)
-                      {
-                          Assert.True(b.PropertyFilter(b, item));
-                      }
+                      Assert.True(b.PropertyFilter(b, "foo"));
+                      Assert.True(b.PropertyFilter(b, "bar"));
 
-                      foreach (var item in excludeProperties)
-                      {
-                          Assert.False(b.PropertyFilter(b, item));
-                      }
+                      Assert.False(b.PropertyFilter(b, "exclude1"));
+                      Assert.False(b.PropertyFilter(b, "exclude2"));
                   })
                   .Returns(Task.FromResult(true))
                   .Verifiable();
@@ -1014,10 +997,6 @@ namespace Microsoft.AspNet.Mvc.Test
         public async Task 
             TryUpdateModel_IncludeExpressionWithValueProviderOverload_UsesIncludeAndValueProvider_IfSpecified(string prefix)
         {
-            var includeProperties = new[] { "foo", "bar" };
-           
-            var excludeProperties = new[] { "exclude1", "exclude2" };
-
             var binder = new Mock<IModelBinder>();
             var valueProvider = Mock.Of<IValueProvider>();
             binder.Setup(b => b.BindModelAsync(It.IsAny<ModelBindingContext>()))
@@ -1025,15 +1004,12 @@ namespace Microsoft.AspNet.Mvc.Test
                   {
                       Assert.Equal(prefix, b.ModelName);
                       Assert.Same(valueProvider, b.ValueProvider);
-                      foreach (var item in includeProperties)
-                      {
-                          Assert.True(b.PropertyFilter(b, item));
-                      }
 
-                      foreach (var item in excludeProperties)
-                      {
-                          Assert.False(b.PropertyFilter(b, item));
-                      }
+                      Assert.True(b.PropertyFilter(b, "foo"));
+                      Assert.True(b.PropertyFilter(b, "bar"));
+
+                      Assert.False(b.PropertyFilter(b, "exclude1"));
+                      Assert.False(b.PropertyFilter(b, "exclude2"));
                   })
                   .Returns(Task.FromResult(true))
                   .Verifiable();
@@ -1043,7 +1019,7 @@ namespace Microsoft.AspNet.Mvc.Test
             var bindingContext = new ActionBindingContext(actionContext,
                                                           metadataProvider,
                                                           binder.Object,
-                                                          Mock.Of<IValueProvider>(), // Notice the use of mock VP here.
+                                                          Mock.Of<IValueProvider>(), // Mock is used to ensure it uses passed in VP.
                                                           Mock.Of<IInputFormatterSelector>(),
                                                           Mock.Of<IModelValidatorProvider>());
             var bindingContextProvider = new Mock<IActionBindingContextProvider>();

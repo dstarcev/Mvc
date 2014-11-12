@@ -10,6 +10,18 @@ namespace ModelBindingWebSite.Controllers
 {
     public class TryUpdateModelController : Controller
     {
+        public async Task<Person> GetPerson()
+        {
+            // Person is a recursive object. Only Top level should be updated.
+            var person = new Person();
+            await TryUpdateModelAsync(
+                person,
+                string.Empty,
+                m => m.Parent);
+
+            return person;
+        }
+
         public async Task<User> GetUserAsync_IncludeAllByDefault(int id)
         {
             var user = GetUser(id);
@@ -23,12 +35,22 @@ namespace ModelBindingWebSite.Controllers
             var user = GetUser(id);
             await TryUpdateModelAsync(user,
                                       prefix: string.Empty,
-                                      predicate: (context, modelName) => !string.Equals(modelName, nameof(User.Id),StringComparison.Ordinal) &&
-                                                              !string.Equals(modelName, nameof(User.Key), StringComparison.Ordinal)
+                                      predicate: (context, modelName) => !string.Equals(modelName, nameof(ModelBindingWebSite.User.Id),StringComparison.Ordinal) &&
+                                                              !string.Equals(modelName, nameof(ModelBindingWebSite.User.Key), StringComparison.Ordinal)
                                       );
 
             return user;
         }
+
+        public async Task<bool> CreateAndUpdateUser()
+        {
+            // don't update the id.
+            var user = new User();
+            return await TryUpdateModelAsync(user,
+                                      prefix: string.Empty,
+                                      includeExpressions: model => model.RegisterationMonth);
+        }
+
 
         public async Task<User> GetUserAsync_IncludeSpecificProperties(int id)
         {
@@ -60,7 +82,16 @@ namespace ModelBindingWebSite.Controllers
         {
             var user = GetUser(id);
 
-            // Since this is a chained expression this would 
+            await TryUpdateModelAsync(user, string.Empty, includeExpressions: model => model.Address);
+
+            return user;
+        }
+
+        public async Task<User> GetUserAsync_WithChainedProperties(int id)
+        {
+            var user = GetUser(id);
+
+            // Since this is a chained expression this would throw
             await TryUpdateModelAsync(user, string.Empty, includeExpressions: model => model.Address.Country);
 
             return user;

@@ -384,6 +384,21 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         }
 
         [Fact]
+        public async Task TryUpdateModel_ChainedPropertyExpression_Throws()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+
+            // Act
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                          client.GetAsync("http://localhost/TryUpdateModel/GetUserAsync_WithChainedProperties?id=123"));
+
+            Assert.Equal("Chained member access expression is not supported for include property expression.",
+                         ex.Message);
+        }
+
+        [Fact]
         public async Task TryUpdateModel_FailsToUpdateProperties()
         {
             // Arrange
@@ -399,6 +414,46 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             var result = JsonConvert.DeserializeObject<bool>(response);
 
             // Act
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task TryUpdateModel_IncludeExpression_WorksOnlyAtTopLevel_ForRecursiveObjects()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+
+            // Act
+            var response = await client.GetStringAsync("http://localhost/TryUpdateModel/" +
+                "GetPerson" +
+                "?Parent.Name=fatherName&Parent.Parent.Name=grandFatherName");
+
+            // Assert
+            var person = JsonConvert.DeserializeObject<Person>(response);
+
+            // Act
+            Assert.Equal("fatherName", person.Parent.Name);
+
+            // Includes this as there is data from value providers, the include filter
+            // only works for top level objects.
+            Assert.Equal("grandFatherName", person.Parent.Parent.Name);
+        }
+
+        [Fact]
+        public async Task TryUpdateModel_Validates_ForTopLevelNotIncludedProperties()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+
+            // Act
+            var response = await client.GetStringAsync("http://localhost/TryUpdateModel/" +
+                "CreateAndUpdateUser" +
+                "?RegisterationMonth=March");
+
+            // Assert
+            var result = JsonConvert.DeserializeObject<bool>(response);
             Assert.False(result);
         }
 

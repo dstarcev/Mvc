@@ -3,8 +3,11 @@
 
 #if ASPNET50
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Http;
 using Microsoft.AspNet.Mvc.ModelBinding;
@@ -345,12 +348,117 @@ namespace Microsoft.AspNet.Mvc.Core.Test
             Assert.Equal("ExcludedPropertyValue", model.ExcludedProperty);
         }
 
+        [Fact]
+        public void GetPropertyName_PropertyMemberAccessReturnsPropertyName()
+        {
+            // Arrange
+            Expression<Func<User, object>> expression = m => m.Address;
+
+            // Act 
+            var propertyName = ModelBindingHelper.GetPropertyName(expression.Body);
+
+            // Assert
+            Assert.Equal(nameof(User.Address), propertyName);
+        }
+
+        [Fact]
+        public void GetPropertyName_ChainedExpression_Throws()
+        {
+            // Arrange
+            Expression<Func<User, object>> expression = m => m.Address.Street;
+
+            // Act & Assert
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                        ModelBindingHelper.GetPropertyName(expression.Body));
+
+            Assert.Equal("Chained member access expression is not supported for include property expression.",
+                         ex.Message); 
+        }
+
+        public static IEnumerable<object[]> Expressions
+        {
+            get
+            {
+                Expression<Func<User, object>> expression = m => new Func<User>(() => m);
+                yield return new object[] { expression }; // lambda expression.
+
+                expression = m => m.Save();
+                yield return new object[] { expression }; // method call expression.
+
+                expression = m => m.Friends[0]; // ArrayIndex expression.
+                yield return new object[] { expression };
+
+                expression = m => m[0]; // Indexer expression.
+                yield return new object[] { expression };
+
+                object someVariable = "something";
+                expression = m => someVariable; // Variable accessor.
+                yield return new object[] { expression };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(Expressions))]
+        public void GetPropertyName_ExpressionsOtherThanMemberAccess_Throws(Expression<Func<User, object>> expression)
+        {
+            // Act & Assert
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                        ModelBindingHelper.GetPropertyName(expression.Body));
+
+            Assert.Equal(string.Format("The passed expression of expression node type '{0}' is invalid."+
+                                       " Only member access expressions of member type property are supported.",
+                                        expression.Body.NodeType),
+                         ex.Message);
+        }
+
+        [Fact]
+        public void GetPropertyName_FieldExpression_Throws()
+        {
+            Expression<Func<User, object>> expression = m => m._userId;
+
+            // Act & Assert
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                        ModelBindingHelper.GetPropertyName(expression.Body));
+
+            Assert.Equal(string.Format("The passed expression of expression node type '{0}' is invalid." +
+                                       " Only member access expressions of member type property are supported.",
+                                        expression.Body.NodeType),
+                         ex.Message);
+        }
+
         private static IModelBinder GetCompositeBinder(params IModelBinder[] binders)
         {
             var binderProvider = new Mock<IModelBinderProvider>();
             binderProvider.SetupGet(p => p.ModelBinders)
                           .Returns(binders);
             return new CompositeModelBinder(binderProvider.Object);
+        }
+
+        public class User : List<User>
+        {
+            public string _userId;
+
+            public Address Address { get; set; }
+
+            public User[] Friends { get; set; }
+
+            public bool IsReadOnly
+            {
+                get
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            public User Save()
+            {
+                return this;
+            }
+        }
+
+        public class Address
+        {
+            public string Street { get; set; }
         }
 
         private class MyModel

@@ -100,7 +100,7 @@ namespace Microsoft.AspNet.Mvc.Rendering.Expressions
             return string.Empty;
         }
 
-        private static string GetIndexerInvocation([NotNull] Expression expression,
+        internal static string GetIndexerInvocation([NotNull] Expression expression,
             [NotNull] ParameterExpression[] parameters)
         {
             var converted = Expression.Convert(expression, typeof(object));
