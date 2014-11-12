@@ -273,7 +273,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             Assert.Equal(expectedPropertyNames, returnedPropertyNames);
         }
 
-        [Bind(Exclude = nameof(Excluded1) + "," + nameof(Excluded2))]
+        [Bind(typeof(ExcludedProvider))]
         private class TypeWithExcludedPropertiesUsingBindAttribute
         {
             public int Excluded1 { get; set; }
@@ -282,6 +282,17 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             public int IncludedByDefault1 { get; set; }
             public int IncludedByDefault2 { get; set; }
+        }
+
+        public class ExcludedProvider : IModelPropertyFilterProvider
+        {
+            public Func<ModelBindingContext, string, bool> PropertyFilter
+            {
+                get
+                {
+                    return (context, propertyName) => !string.Equals("Excluded1", propertyName, StringComparison.OrdinalIgnoreCase) && !string.Equals("Excluded2", propertyName, StringComparison.OrdinalIgnoreCase);
+                }
+            }
         }
 
         [Fact]

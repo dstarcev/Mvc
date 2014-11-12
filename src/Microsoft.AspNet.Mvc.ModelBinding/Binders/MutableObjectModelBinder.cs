@@ -24,7 +24,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             var topLevelObject = bindingContext.ModelMetadata.ContainerType == null;
             var isThereAnExplicitAlias = bindingContext.ModelMetadata.ModelName != null;
-
             
             // The first check is necessary because if we fallback to empty prefix, we do not want to depend
             // on a value provider to provide a value for empty prefix.
@@ -166,21 +165,30 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         protected virtual IEnumerable<ModelMetadata> GetMetadataForProperties(ModelBindingContext bindingContext)
         {
             var validationInfo = GetPropertyValidationInfo(bindingContext);
-            var propertyTypeMetadata = bindingContext.MetadataProvider
-                                                     .GetMetadataForType(null, bindingContext.ModelType);
-            Func<string, bool> newPropertyFilter =
-                propertyName => bindingContext.PropertyFilter(bindingContext, propertyName) &&
-                                BindAttribute.IsPropertyAllowed(
-                                                propertyName,
-                                                propertyTypeMetadata.IncludedProperties,
-                                                propertyTypeMetadata.ExcludedProperties);
-
+            var newPropertyFilter = GetPropertyFilter(bindingContext);
             return bindingContext.ModelMetadata.Properties
                                  .Where(propertyMetadata =>
                                     newPropertyFilter(propertyMetadata.PropertyName) &&
                                     (validationInfo.RequiredProperties.Contains(propertyMetadata.PropertyName) ||
                                     !validationInfo.SkipProperties.Contains(propertyMetadata.PropertyName)) &&
                                     CanUpdateProperty(propertyMetadata));
+        }
+
+        private static Func<string, bool> GetPropertyFilter(ModelBindingContext bindingContext)
+        {
+            var propertyTypeMetadata = bindingContext.MetadataProvider
+                                                     .GetMetadataForType(null, bindingContext.ModelType);
+            var propertyFilterType = propertyTypeMetadata.PropertyFilterProviderType;
+            Func<string, bool> newPropertyFilter =
+                propertyName => 
+                    bindingContext.PropertyFilter(bindingContext, propertyName) &&                               
+                    BindAttribute.IsPropertyAllowed(
+                                    propertyName,
+                                    propertyTypeMetadata.IncludedProperties) &&
+                    (propertyFilterType == null ||
+                        ((IModelPropertyFilterProvider)Activator.CreateInstance(propertyFilterType))
+                                .PropertyFilter(bindingContext, propertyName));
+            return newPropertyFilter;
         }
 
         private static object GetPropertyDefaultValue(PropertyInfo propertyInfo)

@@ -160,7 +160,7 @@ namespace Microsoft.AspNet.Mvc
             return false;
         }
 
-        private static IEnumerable<Func<ModelBindingContext, string, bool>> GetIncludePredicates<TModel>
+        internal static IEnumerable<Func<ModelBindingContext, string, bool>> GetIncludePredicates<TModel>
             (string prefix, IEnumerable<Expression<Func<TModel, object>>> expressions)
         {
             foreach (var expression in expressions)

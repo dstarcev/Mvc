@@ -38,7 +38,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             var modelNameProvider = attributes.OfType<IModelNameProvider>().FirstOrDefault();
             ModelName = modelNameProvider?.Name;
 
-            var bindAttribute = attributes.OfType<BindAttribute>().FirstOrDefault();
+            var bindAttribute = attributes.OfType<IModelPropertyBindingInfo>().FirstOrDefault();
             ReadSettingsFromBindAttribute(bindAttribute);
         }
 
@@ -291,15 +291,15 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             }
         }
 
-        private void ReadSettingsFromBindAttribute(BindAttribute bindAttribute)
+        private void ReadSettingsFromBindAttribute(IModelPropertyBindingInfo bindAttribute)
         {
             if (bindAttribute == null)
             {
                 return;
             }
 
-            ExcludedProperties = SplitString(bindAttribute.Exclude).ToList();
             IncludedProperties = SplitString(bindAttribute.Include).ToList();
+            PropertyFilterProviderType = bindAttribute.PropertyFilterProviderType;
         }
 
         private static IEnumerable<string> SplitString(string original)

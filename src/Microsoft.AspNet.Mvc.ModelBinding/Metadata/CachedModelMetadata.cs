@@ -59,7 +59,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             PrototypeCache = prototype.PrototypeCache;
             BinderMetadata = prototype.BinderMetadata;
             IncludedProperties = prototype.IncludedProperties;
-            ExcludedProperties = prototype.ExcludedProperties;
+            PropertyFilterProviderType = prototype.PropertyFilterProviderType;
             ModelName = prototype.ModelName;
             _isComplexType = prototype.IsComplexType;
             _isComplexTypeComputed = true;

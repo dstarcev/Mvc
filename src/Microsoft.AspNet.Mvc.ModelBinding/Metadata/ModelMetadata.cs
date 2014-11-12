@@ -58,9 +58,9 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         public IReadOnlyList<string> IncludedProperties { get; set; }
 
         /// <summary>
-        /// Properties which are marked as Excluded for this model.
+        /// A <see cref="Type"/> which implements <see cref="IModelPropertyFilterProvider"/> .
         /// </summary>
-        public IReadOnlyList<string> ExcludedProperties { get; set; }
+        public Type PropertyFilterProviderType { get; set; }
 
         /// <summary>
         /// Gets or sets a binder metadata for this model.

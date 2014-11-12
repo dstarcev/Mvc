@@ -85,10 +85,13 @@ namespace Microsoft.AspNet.Mvc
 
         internal static ModelBindingContext GetModelBindingContext(ModelMetadata modelMetadata, ActionBindingContext actionBindingContext)
         {
+            var propertyFilterType = modelMetadata.PropertyFilterProviderType;
             Func<ModelBindingContext, string, bool> propertyFilter =
-                (context, propertyName) => BindAttribute.IsPropertyAllowed(propertyName,
-                                                                modelMetadata.IncludedProperties,
-                                                                modelMetadata.ExcludedProperties);
+                (context, propertyName) 
+                   => BindAttribute.IsPropertyAllowed(propertyName, modelMetadata.IncludedProperties) &&
+                     (propertyFilterType == null || 
+                      ((IModelPropertyFilterProvider)Activator.CreateInstance(propertyFilterType))
+                        .PropertyFilter(context, propertyName));
 
             var modelBindingContext = new ModelBindingContext
             {

@@ -33,11 +33,13 @@ namespace ModelBindingWebSite.Controllers
         public async Task<User> GetUserAsync_ExcludeSpecificProperties(int id)
         {
             var user = GetUser(id);
-            await TryUpdateModelAsync(user,
-                                      prefix: string.Empty,
-                                      predicate: (context, modelName) => !string.Equals(modelName, nameof(ModelBindingWebSite.User.Id),StringComparison.Ordinal) &&
-                                                              !string.Equals(modelName, nameof(ModelBindingWebSite.User.Key), StringComparison.Ordinal)
-                                      );
+            await TryUpdateModelAsync(
+                user,                
+                prefix: string.Empty,
+                predicate: 
+                (context, modelName) =>
+                    !string.Equals(modelName, nameof(ModelBindingWebSite.User.Id),StringComparison.Ordinal) &&
+                    !string.Equals(modelName, nameof(ModelBindingWebSite.User.Key), StringComparison.Ordinal));
 
             return user;
         }
