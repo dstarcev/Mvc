@@ -34,8 +34,11 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 ModelBinder = bindingContext.ModelBinder;
                 ValidatorProvider = bindingContext.ValidatorProvider;
                 HttpContext = bindingContext.HttpContext;
+                IsFormatterBinderMetadataFound = bindingContext.IsFormatterBinderMetadataFound;
             }
         }
+
+        public bool IsFormatterBinderMetadataFound { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="HttpContext"/> for the current request.

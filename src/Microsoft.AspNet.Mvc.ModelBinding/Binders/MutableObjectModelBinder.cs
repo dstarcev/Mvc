@@ -30,7 +30,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             var propertyMetadatas = mutableObjectBinderContext.PropertyMetadata ?? 
                                         GetMetadataForProperties(bindingContext).ToArray();
 
-            var dto = CreateAndPopulateDto(bindingContext, propertyMetadatas);
+            var dto = await CreateAndPopulateDto(bindingContext, propertyMetadatas);
 
             // post-processing, e.g. property setters and hooking up validation
             ProcessDto(bindingContext, dto);
@@ -209,7 +209,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             return true;
         }
 
-        private ComplexModelDto CreateAndPopulateDto(ModelBindingContext bindingContext,
+        private async Task<ComplexModelDto> CreateAndPopulateDto(ModelBindingContext bindingContext,
                                                      IEnumerable<ModelMetadata> propertyMetadatas)
         {
             // create a DTO and call into the DTO binder
@@ -221,7 +221,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 ModelName = bindingContext.ModelName
             };
 
-            bindingContext.OperationBindingContext.ModelBinder.BindModelAsync(dtoBindingContext);
+            await bindingContext.OperationBindingContext.ModelBinder.BindModelAsync(dtoBindingContext);
             return (ComplexModelDto)dtoBindingContext.Model;
         }
 

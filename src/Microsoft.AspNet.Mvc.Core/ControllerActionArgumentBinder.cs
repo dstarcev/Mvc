@@ -60,10 +60,8 @@ namespace Microsoft.AspNet.Mvc
             }
 
             var actionArguments = new Dictionary<string, object>(StringComparer.Ordinal);
-            foreach (var parameter in parameterMetadata)
-            {
-                await PopulateArgumentAsync(actionBindingContext, actionArguments, parameter);
-            }
+            await PopulateArgumentAsync(actionBindingContext, actionArguments, parameterMetadata);
+           
 
             return actionArguments;
         }
@@ -71,15 +69,25 @@ namespace Microsoft.AspNet.Mvc
         private async Task PopulateArgumentAsync(
             ActionBindingContext actionBindingContext,
             IDictionary<string, object> arguments,
-            ModelMetadata modelMetadata)
+            IEnumerable<ModelMetadata> parameterMetadata)
         {
-
-            var parameterType = modelMetadata.ModelType;
-            var modelBindingContext = GetModelBindingContext(modelMetadata, actionBindingContext);
-
-            if (await actionBindingContext.ModelBinder.BindModelAsync(modelBindingContext))
+            var isFormatterBinderMetadataFound = false;
+            foreach (var parameter in parameterMetadata)
             {
-                arguments[modelMetadata.PropertyName] = modelBindingContext.Model;
+
+                var parameterType = parameter.ModelType;
+                var modelBindingContext = GetModelBindingContext(parameter, actionBindingContext);
+                modelBindingContext.OperationBindingContext.IsFormatterBinderMetadataFound = isFormatterBinderMetadataFound;
+
+                if (await actionBindingContext.ModelBinder.BindModelAsync(modelBindingContext))
+                {
+                    arguments[parameter.PropertyName] = modelBindingContext.Model;
+                }
+
+                if (modelBindingContext.OperationBindingContext.IsFormatterBinderMetadataFound)
+                {
+                    isFormatterBinderMetadataFound = true;
+                }
             }
         }
 

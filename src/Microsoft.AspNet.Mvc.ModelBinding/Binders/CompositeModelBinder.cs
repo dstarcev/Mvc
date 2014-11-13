@@ -89,6 +89,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 newBindingContext.ValidationNode.Validate(validationContext, parentNode: null);
             }
 
+            bindingContext.OperationBindingContext.IsFormatterBinderMetadataFound = newBindingContext.OperationBindingContext.IsFormatterBinderMetadataFound;
             bindingContext.Model = newBindingContext.Model;
             return true;
         }
