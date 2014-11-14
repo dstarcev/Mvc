@@ -15,22 +15,20 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
     {
         public virtual async Task<bool> BindModelAsync(ModelBindingContext bindingContext)
         {
+            ModelBindingHelper.ValidateBindingContext(bindingContext);
             var mutableObjectBinderContext = new MutableObjectBinderContext()
             {
                 ModelBindingContext = bindingContext,
+                PropertyMetadata = GetMetadataForProperties(bindingContext),
             };
 
-            ModelBindingHelper.ValidateBindingContext(bindingContext);
             if (!CanBindType(bindingContext.ModelType) || !(await CanCreateModel(mutableObjectBinderContext)))
             {
                 return false;
             }
 
             EnsureModel(bindingContext);
-            var propertyMetadatas = mutableObjectBinderContext.PropertyMetadata ?? 
-                                        GetMetadataForProperties(bindingContext).ToArray();
-
-            var dto = CreateAndPopulateDto(bindingContext, propertyMetadatas);
+            var dto = CreateAndPopulateDto(bindingContext, mutableObjectBinderContext.PropertyMetadata);
 
             // post-processing, e.g. property setters and hooking up validation
             ProcessDto(bindingContext, dto);
@@ -47,9 +45,9 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         internal async Task<bool> CanCreateModel(MutableObjectBinderContext context)
         {
             var bindingContext = context.ModelBindingContext;
-            var topLevelObject = bindingContext.ModelMetadata.ContainerType == null;
+            var isTopLevelObject = bindingContext.ModelMetadata.ContainerType == null;
             var isThereAnExplicitAlias = bindingContext.ModelMetadata.ModelName != null;
-
+            
             // The fact that this has reached here, 
             // it is a complex object which was not directly bound by any previous model binders. 
             // Check if this was supposed to be handled by a non value provider based binder.
@@ -57,8 +55,8 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             // This check would prevent it from recursing in if a model contains a property of its own type.
             // We skip this check if it is a top level object because we want to always evaluate 
             // the creation of top level object (this is also required for ModelBinderAttribute to work.)
-            if (!topLevelObject &&
-                bindingContext.ModelMetadata.BinderMetadata is IBinderMetadata &&
+            if (!isTopLevelObject &&
+                bindingContext.ModelMetadata.BinderMetadata != null &&
                 !(bindingContext.ModelMetadata.BinderMetadata is IValueProviderMetadata))
             {
                 return false;
@@ -67,14 +65,14 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             // Create the object if :
             // 1. It is a top level model with an explicit user supplied prefix. 
             //    In this case since it will never fallback to empty prefix, we need to create the model here.
-            if (topLevelObject && isThereAnExplicitAlias)
+            if (isTopLevelObject && isThereAnExplicitAlias)
             {
                 return true;
             }
 
             // 2. It is a top level object and there is no model name ( Fallback to empty prefix case ). 
             //    This is necessary as we do not want to depend on a value provider to contain an empty prefix.
-            if (topLevelObject && bindingContext.ModelName == string.Empty)
+            if (isTopLevelObject && bindingContext.ModelName == string.Empty)
             {
                 return true;
             }
@@ -105,14 +103,12 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             // where a value provider might be willing to provide a marked property, which might never be bound.
             // For example if person.Name is marked with FromQuery, and FormValueProvider has a key person.Name, and the
             // QueryValueProvider does not, we do not want to create Person.
-            context.PropertyMetadata = GetMetadataForProperties(context.ModelBindingContext).ToArray();
-
             var isAnyPropertyEnabledForValueProviderBasedBinding = false;
             foreach (var propertyMetadata in context.PropertyMetadata)
             {
                 // This check will skip properties which are marked explicitly using a non value binder.
                 if (propertyMetadata.BinderMetadata == null ||
-                    propertyMetadata.BinderMetadata as IValueProviderMetadata != null)
+                    propertyMetadata.BinderMetadata is IValueProviderMetadata)
                 {
                     isAnyPropertyEnabledForValueProviderBasedBinding = true;
 
@@ -129,7 +125,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 // Either there are no properties or all the properties are marked as
                 // a non value provider based marker.
                 // This would be the case when the model has all its properties annotated with
-                // a IBinderMetadata ( a metadata POCO class ). We want to be able to create such a model.
+                // a IBinderMetadata. We want to be able to create such a model.
                 return true;
             }
 
