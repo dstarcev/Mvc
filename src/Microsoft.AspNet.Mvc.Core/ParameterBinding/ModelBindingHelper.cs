@@ -17,22 +17,24 @@ namespace Microsoft.AspNet.Mvc
     public static class ModelBindingHelper
     {
         /// <summary>
-        /// Updates the specified model instance using the specified binder and value provider and 
-        /// executes validation using the specified sequence of validator providers.
+        /// Updates the specified model instance using the specified <paramref name="modelBinder"/> and the specified 
+        /// <paramref name="valueProvider"/> and executes validation using the specified 
+        /// <paramref name="validatorProvider"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>
-        /// <param name="model">The model instance to update.</param>
-        /// <param name="prefix">The prefix to use when looking up values in the value provider.</param>
-        /// <param name="httpContext">The context for the current executing request.</param>
+        /// <param name="model">The model instance to update and validate.</param>
+        /// <param name="prefix">The prefix to use when looking up values in the <paramref name="valueProvider"/>.
+        /// </param>
+        /// <param name="httpContext">The <see cref="HttpContext"/> for the current executing request.</param>
         /// <param name="modelState">The <see cref="ModelStateDictionary"/> used for maintaining state and 
         /// results of model-binding validation.</param>
         /// <param name="metadataProvider">The provider used for reading metadata for the model type.</param>
-        /// <param name="modelBinder">The model binder used for binding.</param>
-        /// <param name="valueProvider">The value provider used for looking up values.</param>
-        /// <param name="validatorProvider">The validator provider used for executing validation on the model
-        /// instance.</param>
-        /// <returns>A <see cref="Task"/> with a value representing if the the update is successful.</returns>
-        public static async Task<bool> TryUpdateModelAsync<TModel>(
+        /// <param name="modelBinder">The <see cref="IModelBinder"/> used for binding.</param>
+        /// <param name="valueProvider">The <see cref="IValueProvider"/> used for looking up values.</param>
+        /// <param name="validatorProvider">The <see cref="IModelValidatorProvider"/> used for executing validation 
+        /// on the model instance.</param>
+        /// <returns>A <see cref="Task"/> that on completion returns <c>true</c> if the update is successful</returns>
+        public static Task<bool> TryUpdateModelAsync<TModel>(
                 [NotNull] TModel model,
                 [NotNull] string prefix,
                 [NotNull] HttpContext httpContext,
@@ -44,7 +46,7 @@ namespace Microsoft.AspNet.Mvc
             where TModel : class
         {
             // Includes everything by default.
-            return await TryUpdateModelAsync(
+            return TryUpdateModelAsync(
                 model,
                 prefix,
                 httpContext,
@@ -57,24 +59,27 @@ namespace Microsoft.AspNet.Mvc
         }
 
         /// <summary>
-        /// Updates the specified model instance using the specified binder and value provider and 
-        /// executes validation using the specified sequence of validator providers.
+        /// Updates the specified model instance using the specified <paramref name="modelBinder"/> and the specified 
+        /// <paramref name="valueProvider"/> and executes validation using the specified 
+        /// <paramref name="validatorProvider"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>
-        /// <param name="model">The model instance to update.</param>
-        /// <param name="prefix">The prefix to use when looking up values in the value provider.</param>
-        /// <param name="httpContext">The context for the current executing request.</param>
+        /// <param name="model">The model instance to update and validate.</param>
+        /// <param name="prefix">The prefix to use when looking up values in the <paramref name="valueProvider"/>.
+        /// </param>
+        /// <param name="httpContext">The <see cref="HttpContext"/> for the current executing request.</param>
         /// <param name="modelState">The <see cref="ModelStateDictionary"/> used for maintaining state and 
         /// results of model-binding validation.</param>
         /// <param name="metadataProvider">The provider used for reading metadata for the model type.</param>
-        /// <param name="modelBinder">The model binder used for binding.</param>
-        /// <param name="valueProvider">The value provider used for looking up values.</param>
-        /// <param name="validatorProvider">The validator provider used for executing validation on the model
+        /// <param name="modelBinder">The <see cref="IModelBinder"/> used for binding.</param>
+        /// <param name="valueProvider">The <see cref="IValueProvider"/> used for looking up values.</param>
+        /// <param name="validatorProvider">The <see cref="IModelValidatorProvider"/> used for executing validation
+        /// on the model
         /// instance.</param>
         /// <param name="includeExpressions">Expression(s) which represent top level properties 
         /// which need to be included for the current model.</param>
-        /// <returns>A <see cref="Task"/> with a value representing if the the update is successful.</returns>
-        public static async Task<bool> TryUpdateModelAsync<TModel>(
+        /// <returns>A <see cref="Task"/> that on completion returns <c>true</c> if the update is successful</returns>
+        public static Task<bool> TryUpdateModelAsync<TModel>(
                [NotNull] TModel model,
                [NotNull] string prefix,
                [NotNull] HttpContext httpContext,
@@ -87,11 +92,10 @@ namespace Microsoft.AspNet.Mvc
            where TModel : class
         {
             var includePredicates = GetIncludePredicates(prefix, includeExpressions).ToArray();
-            Func<ModelBindingContext, string, bool> predicate =
-                (bindingContext, modelName) =>
+            Func<ModelBindingContext, string, bool> predicate = (bindingContext, modelName) =>
                     includePredicates.Any(includePredicate => includePredicate(bindingContext, modelName));
 
-            return await TryUpdateModelAsync(
+            return TryUpdateModelAsync(
                model,
                prefix,
                httpContext,
@@ -104,23 +108,25 @@ namespace Microsoft.AspNet.Mvc
         }
 
         /// <summary>
-        /// Updates the specified model instance using the specified binder and value provider and 
-        /// executes validation using the specified sequence of validator providers.
+        /// Updates the specified model instance using the specified <paramref name="modelBinder"/> and the specified 
+        /// <paramref name="valueProvider"/> and executes validation using the specified 
+        /// <paramref name="validatorProvider"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>
-        /// <param name="model">The model instance to update.</param>
-        /// <param name="prefix">The prefix to use when looking up values in the value provider.</param>
-        /// <param name="httpContext">The context for the current executing request.</param>
+        /// <param name="model">The model instance to update and validate.</param>
+        /// <param name="prefix">The prefix to use when looking up values in the <paramref name="valueProvider"/>.
+        /// </param>
+        /// <param name="httpContext">The <see cref="HttpContext"/> for the current executing request.</param>
         /// <param name="modelState">The <see cref="ModelStateDictionary"/> used for maintaining state and 
         /// results of model-binding validation.</param>
         /// <param name="metadataProvider">The provider used for reading metadata for the model type.</param>
-        /// <param name="modelBinder">The model binder used for binding.</param>
-        /// <param name="valueProvider">The value provider used for looking up values.</param>
-        /// <param name="validatorProvider">The validator provider used for executing validation on the model
-        /// instance.</param>
+        /// <param name="modelBinder">The <see cref="IModelBinder"/> used for binding.</param>
+        /// <param name="valueProvider">The <see cref="IValueProvider"/> used for looking up values.</param>
+        /// <param name="validatorProvider">The <see cref="IModelValidatorProvider"/> used for executing validation 
+        /// on the model instance.</param>
         /// <param name="predicate">A predicate which can be used to 
         /// filter properties(for inclusion/exclusion) at runtime.</param>
-        /// <returns>A <see cref="Task"/> with a value representing if the the update is successful.</returns>
+        /// <returns>A <see cref="Task"/> that on completion returns <c>true</c> if the update is successful</returns>
         public static async Task<bool> TryUpdateModelAsync<TModel>(
                [NotNull] TModel model,
                [NotNull] string prefix,
@@ -160,24 +166,6 @@ namespace Microsoft.AspNet.Mvc
             return false;
         }
 
-        private static IEnumerable<Func<ModelBindingContext, string, bool>> GetIncludePredicates<TModel>
-            (string prefix, IEnumerable<Expression<Func<TModel, object>>> expressions)
-        {
-            foreach (var expression in expressions)
-            {
-                var propertyName = GetPropertyName(expression.Body);
-                var property = CreatePropertyModelName(prefix, propertyName);
-
-                Func<ModelBindingContext, string, bool> predicate =
-                (context, modelPropertyName) =>
-                {
-                    var fullPropertyName = CreatePropertyModelName(context.ModelName, modelPropertyName);
-                    return property.Equals(fullPropertyName, StringComparison.OrdinalIgnoreCase);
-                };
-                yield return predicate;
-            }
-        }
-
         internal static string GetPropertyName(Expression expression)
         {
             switch (expression.NodeType)
@@ -197,7 +185,8 @@ namespace Microsoft.AspNet.Mvc
                         if (memberExpression.Expression.NodeType != ExpressionType.Parameter)
                         {
                             // Chained expressions are not supported.
-                            throw new InvalidOperationException(Resources.Chained_IncludePropertyExpression_NotSupported);
+                            throw new InvalidOperationException(
+                                Resources.Chained_IncludePropertyExpression_NotSupported);
                         }
 
                         return memberInfo.Name;
@@ -212,6 +201,24 @@ namespace Microsoft.AspNet.Mvc
                 default:
                     throw new InvalidOperationException(Resources.FormatInvalid_IncludePropertyExpression(
                         expression.NodeType));
+            }
+        }
+
+        private static IEnumerable<Func<ModelBindingContext, string, bool>> GetIncludePredicates<TModel>
+            (string prefix, IEnumerable<Expression<Func<TModel, object>>> expressions)
+        {
+            foreach (var expression in expressions)
+            {
+                var propertyName = GetPropertyName(expression.Body);
+                var property = CreatePropertyModelName(prefix, propertyName);
+
+                Func<ModelBindingContext, string, bool> predicate =
+                (context, modelPropertyName) =>
+                {
+                    var fullPropertyName = CreatePropertyModelName(context.ModelName, modelPropertyName);
+                    return property.Equals(fullPropertyName, StringComparison.OrdinalIgnoreCase);
+                };
+                yield return predicate;
             }
         }
 
