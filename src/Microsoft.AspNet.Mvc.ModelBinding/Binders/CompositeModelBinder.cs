@@ -80,8 +80,8 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                                                                                bindingContext.ModelName);
                 }
 
-                var validationContext = new ModelValidationContext(bindingContext.MetadataProvider,
-                                                                   bindingContext.ValidatorProvider,
+                var validationContext = new ModelValidationContext( bindingContext.OperationBindingContext.MetadataProvider,
+                                                                   bindingContext.OperationBindingContext.ValidatorProvider,
                                                                    bindingContext.ModelState,
                                                                    bindingContext.ModelMetadata,
                                                                    containerMetadata: null);
@@ -131,11 +131,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 ModelName = modelName,
                 ModelState = oldBindingContext.ModelState,
                 ValueProvider = oldBindingContext.ValueProvider,
-                OriginalValueProvider = oldBindingContext.OriginalValueProvider,
-                ValidatorProvider = oldBindingContext.ValidatorProvider,
-                MetadataProvider = oldBindingContext.MetadataProvider,
-                ModelBinder = oldBindingContext.ModelBinder,
-                HttpContext = oldBindingContext.HttpContext,
+                OperationBindingContext = oldBindingContext.OperationBindingContext,
                 PropertyFilter = oldBindingContext.PropertyFilter,
             };
 
@@ -155,7 +151,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 // of all value providers. This is so that every artifact that is explicitly marked using an
                 // IValueProviderMetadata can restrict model binding to only use value providers which support this 
                 // IValueProviderMetadata.
-                var valueProvider = oldBindingContext.OriginalValueProvider as IMetadataAwareValueProvider;
+                var valueProvider = oldBindingContext.OperationBindingContext.OriginalValueProvider as IMetadataAwareValueProvider;
                 if (valueProvider != null)
                 {
                     newBindingContext.ValueProvider = valueProvider.Filter(metadata);

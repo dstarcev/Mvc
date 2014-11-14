@@ -40,6 +40,13 @@ namespace Microsoft.AspNet.Mvc
             var modelMetadata = metadataProvider.GetMetadataForType(
                 modelAccessor: null,
                 modelType: typeof(TModel));
+            var operationBindingContext = new OperationBindingContext
+            {
+                ModelBinder = modelBinder,
+                ValidatorProvider = validatorProvider,
+                MetadataProvider = metadataProvider,
+                HttpContext = httpContext
+            };
 
             var modelBindingContext = new ModelBindingContext
             {
@@ -47,12 +54,9 @@ namespace Microsoft.AspNet.Mvc
                 ModelName = prefix,
                 Model = model,
                 ModelState = modelState,
-                ModelBinder = modelBinder,
                 ValueProvider = valueProvider,
-                ValidatorProvider = validatorProvider,
-                MetadataProvider = metadataProvider,
                 FallbackToEmptyPrefix = true,
-                HttpContext = httpContext
+                OperationBindingContext = operationBindingContext,
             };
 
             if (await modelBinder.BindModelAsync(modelBindingContext))

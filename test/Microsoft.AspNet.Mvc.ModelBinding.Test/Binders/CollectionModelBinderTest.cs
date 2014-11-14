@@ -133,7 +133,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             var bindingContext = GetModelBindingContext(new SimpleHttpValueProvider());
 
             ModelValidationNode childValidationNode = null;
-            Mock.Get<IModelBinder>(bindingContext.ModelBinder)
+            Mock.Get<IModelBinder>(bindingContext.OperationBindingContext.ModelBinder)
                 .Setup(o => o.BindModelAsync(It.IsAny<ModelBindingContext>()))
                 .Returns((ModelBindingContext mbc) =>
                 {
@@ -160,8 +160,11 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
                 ModelMetadata = metadataProvider.GetMetadataForType(null, typeof(int)),
                 ModelName = "someName",
                 ValueProvider = valueProvider,
-                ModelBinder = CreateIntBinder(),
-                MetadataProvider = metadataProvider
+                OperationBindingContext = new OperationBindingContext
+                {
+                    ModelBinder = CreateIntBinder(),
+                    MetadataProvider = metadataProvider
+                }
             };
             return bindingContext;
         }
