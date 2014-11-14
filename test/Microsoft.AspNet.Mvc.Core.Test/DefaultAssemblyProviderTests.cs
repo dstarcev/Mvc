@@ -58,6 +58,28 @@ namespace Microsoft.AspNet.Mvc.Core
             Assert.Equal(new[] { "Baz", "Foo", "Bar" }, candidates.Select(a => a.Name));
         }
 
+        [Fact]
+        public void CandidateAssemblies_ReturnsLibrariesReferencingAddedAssemblies()
+        {
+            // Arrange
+            var manager = new Mock<ILibraryManager>();
+            manager.Setup(f => f.GetReferencingLibraries(It.IsAny<string>()))
+                  .Returns(Enumerable.Empty<ILibraryInformation>());
+            manager.Setup(f => f.GetReferencingLibraries("MyAssembly"))
+                   .Returns(new[] { CreateLibraryInfo("Foo") });
+            manager.Setup(f => f.GetReferencingLibraries("AnotherAssembly"))
+                   .Returns(new[] { CreateLibraryInfo("Bar") });
+            var provider = new DefaultAssemblyProvider(manager.Object);
+            provider.referenceAssemblies.Add("MyAssembly");
+            provider.referenceAssemblies.Add("AnotherAssembly");
+
+            // Act
+            var candidates = provider.GetCandidateLibraries();
+
+            // Assert
+            Assert.Equal(new[] { "Foo", "Bar" }, candidates.Select(a => a.Name));
+        }
+
         private static ILibraryInformation CreateLibraryInfo(string name)
         {
             var info = new Mock<ILibraryInformation>();

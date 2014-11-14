@@ -11,8 +11,11 @@ namespace Microsoft.AspNet.Mvc
 {
     public class DefaultAssemblyProvider : IAssemblyProvider
     {
-        // List of Mvc assemblies that we'll use as roots for controller discovery.
-        private static readonly HashSet<string> _mvcAssemblyList = new HashSet<string>(StringComparer.Ordinal)
+        /// <summary>
+        /// List of reference assemblies that we'll use as roots for controller discovery.
+        /// </summary>
+        public virtual HashSet<string> referenceAssemblies { get; set; }
+        = new HashSet<string>(StringComparer.Ordinal)
         {
             "Microsoft.AspNet.Mvc",
             "Microsoft.AspNet.Mvc.Core",
@@ -42,7 +45,7 @@ namespace Microsoft.AspNet.Mvc
             // GetReferencingLibraries returns the transitive closure of referencing assemblies
             // for a given assembly. In our case, we'll gather all assemblies that reference
             // any of the primary Mvc assemblies while ignoring Mvc assemblies.
-            return _mvcAssemblyList.SelectMany(_libraryManager.GetReferencingLibraries)
+            return referenceAssemblies.SelectMany(_libraryManager.GetReferencingLibraries)
                                    .Distinct()
                                    .Where(IsCandidateLibrary);
         }
@@ -52,9 +55,9 @@ namespace Microsoft.AspNet.Mvc
             return Assembly.Load(assemblyName);
         }
 
-        private static bool IsCandidateLibrary(ILibraryInformation library)
+        private bool IsCandidateLibrary(ILibraryInformation library)
         {
-            return !_mvcAssemblyList.Contains(library.Name);
+            return !referenceAssemblies.Contains(library.Name);
         }
     }
 }
