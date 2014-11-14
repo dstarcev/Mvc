@@ -91,7 +91,7 @@ namespace Microsoft.AspNet.Mvc
                [NotNull] params Expression<Func<TModel, object>>[] includeExpressions)
            where TModel : class
         {
-            var includePredicates = GetIncludePredicates(prefix, includeExpressions).ToArray();
+            var includePredicates = GetIncludePredicates(prefix, includeExpressions);
             Func<ModelBindingContext, string, bool> predicate = (bindingContext, modelName) =>
                     includePredicates.Any(includePredicate => includePredicate(bindingContext, modelName));
 
@@ -168,39 +168,37 @@ namespace Microsoft.AspNet.Mvc
 
         internal static string GetPropertyName(Expression expression)
         {
-            switch (expression.NodeType)
+            if (expression.NodeType == ExpressionType.Convert ||
+                expression.NodeType == ExpressionType.ConvertChecked)
             {
-                case ExpressionType.Convert:
-                case ExpressionType.ConvertChecked:
-                    // For Boxed Value Types 
-                    var convertExpression = (UnaryExpression)expression;
-                    return GetPropertyName(convertExpression.Operand);
+                // For Boxed Value Types 
+                expression = ((UnaryExpression)expression).Operand;
+            }
 
-                case ExpressionType.MemberAccess:
-                    var memberExpression = (MemberExpression)expression;
-
-                    var memberInfo = memberExpression.Member as PropertyInfo;
-                    if (memberInfo != null)
-                    {
-                        if (memberExpression.Expression.NodeType != ExpressionType.Parameter)
-                        {
-                            // Chained expressions are not supported.
-                            throw new InvalidOperationException(
-                                Resources.Chained_IncludePropertyExpression_NotSupported);
-                        }
-
-                        return memberInfo.Name;
-                    }
-                    else
-                    {
-                        // Fields are also not supported.
-                        throw new InvalidOperationException(Resources.FormatInvalid_IncludePropertyExpression(
-                            expression.NodeType));
-                    }
-                     
-                default:
-                    throw new InvalidOperationException(Resources.FormatInvalid_IncludePropertyExpression(
+            if (expression.NodeType != ExpressionType.MemberAccess)
+            {
+                throw new InvalidOperationException(Resources.FormatInvalid_IncludePropertyExpression(
                         expression.NodeType));
+            }
+
+            var memberExpression = (MemberExpression)expression;
+            var memberInfo = memberExpression.Member as PropertyInfo;
+            if (memberInfo != null)
+            {
+                if (memberExpression.Expression.NodeType != ExpressionType.Parameter)
+                {
+                    // Chained expressions are not supported.
+                    throw new InvalidOperationException(
+                        Resources.Chained_IncludePropertyExpression_NotSupported);
+                }
+
+                return memberInfo.Name;
+            }
+            else
+            {
+                // Fields are also not supported.
+                throw new InvalidOperationException(Resources.FormatInvalid_IncludePropertyExpression(
+                    expression.NodeType));
             }
         }
 

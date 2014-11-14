@@ -63,15 +63,6 @@ namespace Microsoft.AspNet.Mvc.Rendering.Expressions
                     nameParts.Push("." + memberExpressionPart.Member.Name);
                     part = memberExpressionPart.Expression;
                 }
-                else if (part.NodeType == ExpressionType.Convert)
-                {
-                    // This can happen if the property is a value type but the delegate return object.
-                    // For example Func<User, object> delegate = user => user.Name
-                    // This is used in TryUpdateModel where the property Type is different for different members 
-                    // of the params Expression<delegate>[].
-                    var convertExpression = (UnaryExpression)part;
-                    part = convertExpression.Operand;
-                }
                 else if (part.NodeType == ExpressionType.Parameter)
                 {
                     // When the expression is parameter based (m => m.Something...), we'll push an empty
@@ -100,7 +91,7 @@ namespace Microsoft.AspNet.Mvc.Rendering.Expressions
             return string.Empty;
         }
 
-        internal static string GetIndexerInvocation([NotNull] Expression expression,
+        private static string GetIndexerInvocation([NotNull] Expression expression,
             [NotNull] ParameterExpression[] parameters)
         {
             var converted = Expression.Convert(expression, typeof(object));
