@@ -12,10 +12,9 @@ namespace Microsoft.AspNet.Mvc
     public class DefaultAssemblyProvider : IAssemblyProvider
     {
         /// <summary>
-        /// List of reference assemblies that we'll use as roots for controller discovery.
+        /// Gets the set of assembly names that are used as root for discovery of Mvc controllers, view components and views
         /// </summary>
-        public virtual HashSet<string> referenceAssemblies { get; set; }
-        = new HashSet<string>(StringComparer.Ordinal)
+        public virtual HashSet<string> referenceAssemblies { get; } = new HashSet<string>(StringComparer.Ordinal)
         {
             "Microsoft.AspNet.Mvc",
             "Microsoft.AspNet.Mvc.Core",

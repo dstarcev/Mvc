@@ -59,19 +59,19 @@ namespace Microsoft.AspNet.Mvc.Core
         }
 
         [Fact]
-        public void CandidateAssemblies_ReturnsLibrariesReferencingAddedAssemblies()
+        public void CandidateAssemblies_ReturnsLibrariesReferencingOverridenAssemblies()
         {
             // Arrange
             var manager = new Mock<ILibraryManager>();
             manager.Setup(f => f.GetReferencingLibraries(It.IsAny<string>()))
                   .Returns(Enumerable.Empty<ILibraryInformation>());
+            manager.Setup(f => f.GetReferencingLibraries("Microsoft.AspNet.Mvc.Core"))
+                   .Returns(new[] { CreateLibraryInfo("Baz") });
             manager.Setup(f => f.GetReferencingLibraries("MyAssembly"))
                    .Returns(new[] { CreateLibraryInfo("Foo") });
             manager.Setup(f => f.GetReferencingLibraries("AnotherAssembly"))
                    .Returns(new[] { CreateLibraryInfo("Bar") });
-            var provider = new DefaultAssemblyProvider(manager.Object);
-            provider.referenceAssemblies.Add("MyAssembly");
-            provider.referenceAssemblies.Add("AnotherAssembly");
+            var provider = new TestAssemblyProvider(manager.Object);
 
             // Act
             var candidates = provider.GetCandidateLibraries();
@@ -85,6 +85,25 @@ namespace Microsoft.AspNet.Mvc.Core
             var info = new Mock<ILibraryInformation>();
             info.SetupGet(b => b.Name).Returns(name);
             return info.Object;
+        }
+    }
+
+    class TestAssemblyProvider : DefaultAssemblyProvider
+    {
+        public override HashSet<string> referenceAssemblies
+        {
+            get
+            {
+                return new HashSet<string>
+                {
+                    "MyAssembly",
+                    "AnotherAssembly"
+                };
+            }
+        }
+
+        public TestAssemblyProvider(ILibraryManager libraryManager) : base(libraryManager) 
+        {
         }
     }
 }
