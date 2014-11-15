@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -10,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNet.Http;
 using Microsoft.AspNet.Mvc.Core;
 using Microsoft.AspNet.Mvc.ModelBinding;
-using Microsoft.AspNet.Mvc.Rendering.Expressions;
 
 namespace Microsoft.AspNet.Mvc
 {
@@ -91,9 +89,8 @@ namespace Microsoft.AspNet.Mvc
                [NotNull] params Expression<Func<TModel, object>>[] includeExpressions)
            where TModel : class
         {
-            var includePredicates = GetIncludePredicates(prefix, includeExpressions);
-            Func<ModelBindingContext, string, bool> predicate = (bindingContext, modelName) =>
-                    includePredicates.Any(includePredicate => includePredicate(bindingContext, modelName));
+            var includeExpression = GetIncludePredicateExpression(prefix, includeExpressions);
+            Func<ModelBindingContext, string, bool> predicate = includeExpression.Compile();
 
             return TryUpdateModelAsync(
                model,
@@ -202,22 +199,54 @@ namespace Microsoft.AspNet.Mvc
             }
         }
 
-        private static IEnumerable<Func<ModelBindingContext, string, bool>> GetIncludePredicates<TModel>
-            (string prefix, IEnumerable<Expression<Func<TModel, object>>> expressions)
+        private static Expression<Func<ModelBindingContext, string, bool>> GetIncludePredicateExpression<TModel>
+            (string prefix, Expression<Func<TModel, object>>[] expressions)
         {
-            foreach (var expression in expressions)
+            if (expressions.Count() == 0)
             {
-                var propertyName = GetPropertyName(expression.Body);
-                var property = CreatePropertyModelName(prefix, propertyName);
-
-                Func<ModelBindingContext, string, bool> predicate =
-                (context, modelPropertyName) =>
-                {
-                    var fullPropertyName = CreatePropertyModelName(context.ModelName, modelPropertyName);
-                    return property.Equals(fullPropertyName, StringComparison.OrdinalIgnoreCase);
-                };
-                yield return predicate;
+                // If nothing is included explcitly, treat everything as included.
+                return (context, propertyName) => true;
             }
+
+            Expression<Func<ModelBindingContext, string, bool>> firstExpression = 
+                GetPredicateExpression(prefix, expressions[0]);
+
+            if (expressions.Count() == 1)
+            {
+                return firstExpression;
+            }
+
+            BinaryExpression orWrapperExpression = null;
+            foreach (var expression in expressions.Skip(1))
+            {
+                Expression<Func<ModelBindingContext, string, bool>> predicate = 
+                    GetPredicateExpression(prefix, expression);
+                if (orWrapperExpression == null)
+                {
+                    orWrapperExpression = Expression.OrElse(firstExpression, predicate);
+                }
+                else
+                {
+                    orWrapperExpression = Expression.OrElse(orWrapperExpression, predicate);
+                }
+            }
+
+            return Expression.Lambda<Func<ModelBindingContext, string, bool>>(
+                orWrapperExpression, 
+                Expression.Parameter(typeof(ModelBindingContext), "context"),
+                Expression.Parameter(typeof(string), "propertyName"));
+        }  
+
+        private static Expression<Func<ModelBindingContext, string, bool>> GetPredicateExpression<TModel>
+            (string prefix, Expression<Func<TModel, object>> expression)
+        {
+            var propertyName = GetPropertyName(expression.Body);
+            var property = CreatePropertyModelName(prefix, propertyName);
+
+            return
+             (context, modelPropertyName) =>
+                 property.Equals(CreatePropertyModelName(context.ModelName, modelPropertyName),
+                 StringComparison.OrdinalIgnoreCase);
         }
 
         private static string CreatePropertyModelName(string prefix, string propertyName)

@@ -502,5 +502,28 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             // Should Update all included properties.
             Assert.Equal("March", user.RegisterationMonth);
         }
+
+        [Fact]
+        public async Task TryUpdateModelIncludesAllProperties_ByDefault()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+
+            // Act
+            var response = await client.GetStringAsync("http://localhost/TryUpdateModel/" +
+                "GetUserAsync_IncludeAllByDefault" +
+                "?id=123&RegisterationMonth=March&Key=123&UserName=SomeName");
+
+            // Assert
+            var user = JsonConvert.DeserializeObject<User>(response);
+
+            // Should not update any not explicitly mentioned properties. 
+            Assert.Equal("SomeName", user.UserName);
+            Assert.Equal(123, user.Key);
+
+            // Should Update all included properties.
+            Assert.Equal("March", user.RegisterationMonth);
+        }
     }
 }

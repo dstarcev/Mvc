@@ -783,7 +783,7 @@ namespace Microsoft.AspNet.Mvc.Test
         }
        
         [Fact]
-        public async Task TryUpdateModel_PredicateOverload_UsesIncludeProperties_IfSpecified()
+        public async Task TryUpdateModel_PredicateOverload_UsesPassedArguments()
         {
             // Arrange
             var modelName = "mymodel";
@@ -821,7 +821,7 @@ namespace Microsoft.AspNet.Mvc.Test
         }
 
         [Fact]
-        public async Task TryUpdateModel_PredicateWithValueProviderOverload_UsesIncludeAndValueProvider_IfSpecified()
+        public async Task TryUpdateModel_PredicateWithValueProviderOverload_UsesPassedArguments()
         {
             // Arrange
             var modelName = "mymodel";
@@ -861,7 +861,7 @@ namespace Microsoft.AspNet.Mvc.Test
         [Theory]
         [InlineData("")]
         [InlineData("prefix")]
-        public async Task TryUpdateModel_IncludeExpressionOverload_UsesIncludeProperties_IfSpecified(string prefix)
+        public async Task TryUpdateModel_IncludeExpressionOverload_UsesPassedArguments(string prefix)
         {
             // Arrange
             var binder = new Mock<IModelBinder>();
@@ -895,8 +895,8 @@ namespace Microsoft.AspNet.Mvc.Test
         [Theory]
         [InlineData("")]
         [InlineData("prefix")]
-        public async Task 
-            TryUpdateModel_IncludeExpressionWithValueProviderOverload_UsesIncludeAndValueProvider_IfSpecified(string prefix)
+        public async Task
+            TryUpdateModel_IncludeExpressionWithValueProviderOverload_UsesPassedArguments(string prefix)
         {
             // Arrange
             var binder = new Mock<IModelBinder>();
