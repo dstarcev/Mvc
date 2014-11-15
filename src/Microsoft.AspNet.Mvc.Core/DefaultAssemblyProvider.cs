@@ -12,9 +12,10 @@ namespace Microsoft.AspNet.Mvc
     public class DefaultAssemblyProvider : IAssemblyProvider
     {
         /// <summary>
-        /// Gets the set of assembly names that are used as root for discovery of Mvc controllers, view components and views
+        /// Gets the set of assembly names that are used as root for discovery of 
+        /// Mvc controllers, view components and views.
         /// </summary>
-        public virtual HashSet<string> referenceAssemblies { get; } = new HashSet<string>(StringComparer.Ordinal)
+        public virtual HashSet<string> ReferenceAssemblies { get; } = new HashSet<string>(StringComparer.Ordinal)
         {
             "Microsoft.AspNet.Mvc",
             "Microsoft.AspNet.Mvc.Core",
@@ -41,10 +42,14 @@ namespace Microsoft.AspNet.Mvc
 
         internal IEnumerable<ILibraryInformation> GetCandidateLibraries()
         {
+            if (ReferenceAssemblies == null)
+            {
+                return Enumerable.Empty<ILibraryInformation>();
+            }
             // GetReferencingLibraries returns the transitive closure of referencing assemblies
             // for a given assembly. In our case, we'll gather all assemblies that reference
             // any of the primary Mvc assemblies while ignoring Mvc assemblies.
-            return referenceAssemblies.SelectMany(_libraryManager.GetReferencingLibraries)
+            return ReferenceAssemblies.SelectMany(_libraryManager.GetReferencingLibraries)
                                    .Distinct()
                                    .Where(IsCandidateLibrary);
         }
@@ -56,7 +61,7 @@ namespace Microsoft.AspNet.Mvc
 
         private bool IsCandidateLibrary(ILibraryInformation library)
         {
-            return !referenceAssemblies.Contains(library.Name);
+            return !ReferenceAssemblies.Contains(library.Name);
         }
     }
 }

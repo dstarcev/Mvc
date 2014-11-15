@@ -1,10 +1,8 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Microsoft.Framework.Runtime;
 using Moq;
 using Xunit;
@@ -59,7 +57,7 @@ namespace Microsoft.AspNet.Mvc.Core
         }
 
         [Fact]
-        public void CandidateAssemblies_ReturnsLibrariesReferencingOverridenAssemblies()
+        public void CandidateAssemblies_ReturnsLibrariesReferencingOverriddenAssemblies()
         {
             // Arrange
             var manager = new Mock<ILibraryManager>();
@@ -71,13 +69,19 @@ namespace Microsoft.AspNet.Mvc.Core
                    .Returns(new[] { CreateLibraryInfo("Foo") });
             manager.Setup(f => f.GetReferencingLibraries("AnotherAssembly"))
                    .Returns(new[] { CreateLibraryInfo("Bar") });
-            var provider = new TestAssemblyProvider(manager.Object);
+            var defaultProvider = new DefaultAssemblyProvider(manager.Object);
+            var overriddenProvider = new TestAssemblyProvider(manager.Object);
+            var nullProvider = new NullAssemblyProvider(manager.Object);
 
             // Act
-            var candidates = provider.GetCandidateLibraries();
+            var defaultProviderCandidates = defaultProvider.GetCandidateLibraries();
+            var overriddenProviderCandidates = overriddenProvider.GetCandidateLibraries();
+            var nullProviderCandidates = nullProvider.GetCandidateLibraries();
 
             // Assert
-            Assert.Equal(new[] { "Foo", "Bar" }, candidates.Select(a => a.Name));
+            Assert.Equal(new[] { "Baz" }, defaultProviderCandidates.Select(a => a.Name));
+            Assert.Equal(new[] { "Foo", "Bar" }, overriddenProviderCandidates.Select(a => a.Name));
+            Assert.Equal(Enumerable.Empty<string>(), nullProviderCandidates.Select(a => a.Name));
         }
 
         private static ILibraryInformation CreateLibraryInfo(string name)
@@ -90,7 +94,7 @@ namespace Microsoft.AspNet.Mvc.Core
 
     class TestAssemblyProvider : DefaultAssemblyProvider
     {
-        public override HashSet<string> referenceAssemblies
+        public override HashSet<string> ReferenceAssemblies
         {
             get
             {
@@ -103,6 +107,21 @@ namespace Microsoft.AspNet.Mvc.Core
         }
 
         public TestAssemblyProvider(ILibraryManager libraryManager) : base(libraryManager) 
+        {
+        }
+    }
+
+    class NullAssemblyProvider : DefaultAssemblyProvider
+    {
+        public override HashSet<string> ReferenceAssemblies
+        {
+            get
+            {
+                return null;
+            }
+        }
+
+        public NullAssemblyProvider(ILibraryManager libraryManager) : base(libraryManager) 
         {
         }
     }
